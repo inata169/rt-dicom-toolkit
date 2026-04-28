@@ -5,180 +5,76 @@
 ## 特徴
 
 ### 匿名化ツール
-
-- 完全または部分的な匿名化
-- カスタマイズ可能な匿名化プロファイル
-- 臨床的に重要な構造の保持（臓器名など）
-- 一貫した患者ID対応づけ
-- UID管理（一貫性維持または再生成）
-- プライベートタグの処理（削除または保持）
-- 詳細なログとレポート
-- 元のディレクトリ構造保持オプション
-- GUIとコマンドラインインターフェース
+- **モダンなGUI**: `customtkinter` を採用した直感的でダークモード対応のユーザーインターフェース。
+- **完全・部分匿名化**: 用途に合わせた匿名化レベルの選択が可能。
+- **一貫性の保持**: UIDの一貫性維持（同一Study/Seriesの関連性保持）や、シーケンシャルな匿名ID生成。
+- **プライベートタグ処理**: ネストされたシーケンス内を含めたプライベートタグの再帰的削除。
+- **堅牢な保存**: 非標準的なDICOMファイルでも標準的なヘッダーを付与して保存。
 
 ### 検証ツール
+- 匿名化前後でのタグ比較と残留個人情報（PHI）の検出。
+- 構造情報の保持確認。
+- 詳細な検証レポート（JSON/TXT）の生成。
 
-- 匿名化されたDICOMファイルの包括的な検証
-- 元のファイルと匿名化されたファイルの比較
-- 残留個人情報（PHI）の検出
-- 構造保持の検証
-- 匿名化品質に関する統計レポート
-- 検証結果の視覚化
-- 詳細なレポート
-- GUIとコマンドラインインターフェース
+## クイックスタート
+
+### 1. GUIで起動（推奨）
+プロジェクト直下の `start_gui.bat` をダブルクリックするか、以下のコマンドを実行してください：
+```powershell
+python -m rt_dicom_toolkit
+```
+
+### 2. コマンドライン（CLI）で実行
+引数を指定することで、従来通りのCLIモードで動作します：
+```powershell
+# 匿名化
+python -m rt_dicom_toolkit --input ./DICOM --output ./OUT --private remove
+
+# 検証
+python -m rt_dicom_toolkit validate --original ./DICOM --anonymized ./OUT
+```
 
 ## プロジェクト構造
 
 ```
 rt_dicom_toolkit/
-│
-├── anonymizer/             # DICOM匿名化モジュール
-│   ├── __init__.py
-│   ├── __main__.py        # 匿名化モジュールのエントリーポイント
-│   ├── core.py            # 匿名化コア機能
-│   ├── profiles.py        # 匿名化プロファイル定義
-│   └── utils.py           # 匿名化ユーティリティ
-│
-├── gui/                    # グラフィカルユーザーインターフェース
-│   ├── __init__.py
-│   ├── __main__.py        # GUIモジュールのエントリーポイント
-│   ├── anonymizer_gui.py  # 匿名化ツールGUI
-│   ├── common_widgets.py  # 共通ウィジェットコンポーネント
-│   └── validator_gui.py   # 検証ツールGUI
-│
-├── utils/                  # 共通ユーティリティ
-│   ├── __init__.py
-│   ├── dicom_utils.py     # DICOM操作ユーティリティ
-│   ├── file_utils.py      # ファイル操作ユーティリティ
-│   ├── logging_utils.py   # ロギング機能
-│   └── matplotlib_utils.py # Matplotlib設定ユーティリティ
-│
-├── validator/              # 匿名化検証モジュール
-│   ├── __init__.py
-│   ├── __main__.py        # 検証モジュールのエントリーポイント
-│   ├── core.py            # 検証コア機能
-│   ├── report.py          # レポート生成機能
-│   └── rules.py           # 検証ルール定義
-│
-├── __init__.py             # パッケージ初期化
-├── __main__.py            # メインエントリーポイント
-├── cli.py                  # コマンドラインインターフェース
-├── config.py               # 設定パラメータ
-└── requirements.txt        # 依存パッケージリスト
+├── anonymizer/             # 匿名化コアモジュール
+│   ├── core.py            # 匿名化エンジン
+│   └── profiles.py        # 匿名化ルール定義
+├── gui/                    # モダンGUI (CustomTkinter)
+│   └── main_window.py     # メインウィンドウ実装
+├── validator/              # 検証モジュール
+│   ├── core.py            # 検証ロジック
+│   └── report.py          # レポート生成
+├── tests/                  # pytest スイート
+├── changes/                # OpenSpec (仕様変更管理)
+├── Agents.md               # AIエージェント役割定義
+├── start_gui.bat           # GUI起動用バッチ
+└── Antigravity_Rules.md    # 開発プロトコル
 ```
 
 ## インストール
 
 ### 必要条件
+- Python 3.10以上
+- 推奨: Windows 10/11
 
-- Python 3.6以上
-- 依存パッケージ: pydicom, numpy, matplotlib, pandas
-
-### インストール手順
-
-```bash
-# リポジトリをクローン
-git clone https://github.com/yourusername/rt_dicom_toolkit.git
-cd rt_dicom_toolkit
-
-# 依存パッケージをインストール
-pip install -r rt_dicom_toolkit/requirements.txt
-
-# パッケージとしてインストール（オプション）
-pip install -e .
+### セットアップ
+```powershell
+# 依存パッケージのインストール
+pip install customtkinter darkdetect pydicom numpy pandas matplotlib
 ```
 
-## 使用方法
-
-### 簡易実行方法
-
-```bash
-# 匿名化ツールの簡易実行
-python run_anonymizer.py
+## テスト
+`pytest` を使用して自動テストを実行できます：
+```powershell
+python -m pytest tests/ -v
 ```
 
-### GUIモード
-
-```bash
-# 匿名化ツールGUI
-python -m rt_dicom_toolkit.gui.anonymizer_gui
-# または
-python -m rt_dicom_toolkit.gui anonymizer
-
-# 検証ツールGUI
-python -m rt_dicom_toolkit.gui.validator_gui
-# または
-python -m rt_dicom_toolkit.gui validator
-
-# デフォルトでは検証ツールGUIが起動
-python -m rt_dicom_toolkit.gui
-```
-
-### コマンドラインモード
-
-```bash
-# 匿名化ツール
-python -m rt_dicom_toolkit.cli anonymize --input /path/to/input --output /path/to/output
-
-# 検証ツール
-python -m rt_dicom_toolkit.cli validate --original /path/to/original --anonymized /path/to/anonymized
-
-# モジュールとして直接実行
-python -m rt_dicom_toolkit.anonymizer
-python -m rt_dicom_toolkit.validator
-```
-
-### パッケージインストール後の実行方法
-
-パッケージをインストールした場合（`pip install -e .`）、以下のコマンドが使用可能になります：
-
-```bash
-# コマンドラインツール
-rt-anonymizer --input /path/to/input --output /path/to/output
-rt-validator --original /path/to/original --anonymized /path/to/anonymized
-
-# GUIツール
-rt-anonymizer-gui
-rt-validator-gui
-```
-
-### 注意事項
-
-- 単にクラスをインポートするだけでは何も実行されません。例えば以下のコマンドはクラスをインポートするだけで、実際の処理は行いません：
-  ```python
-  python -c "from rt_dicom_toolkit.validator import RTDicomValidator"
-  ```
-
-- クラスを使用するには、インスタンス化して適切なメソッドを呼び出す必要があります：
-  ```python
-  python -c "from rt_dicom_toolkit.validator import RTDicomValidator; validator = RTDicomValidator(); print('検証ツールが初期化されました')"
-  ```
-
-## データディレクトリ
-
-プロジェクトには以下のデータディレクトリが含まれています：
-
-```
-data/
-├── anonymous_dicom/      # 匿名化されたDICOMファイルの出力先
-├── input_dicom/          # 入力DICOMファイルの配置場所
-├── logs/                 # ログファイルの保存先
-└── validation_reports/   # 検証レポートの保存先
-```
-
-## 詳細ドキュメント
-
-詳細なユーザーマニュアルと開発者ガイドは`docs`ディレクトリにあります：
-
-- [ユーザーマニュアル](docs/user_manual.md)
-- [開発者ガイド](docs/developer_guide.md)
-- [API リファレンス](docs/api_reference.md)
-
-## 貢献
-
-バグ報告、機能リクエスト、プルリクエストなど、あらゆる形での貢献を歓迎します。
-貢献する前に、プロジェクトの[貢献ガイドライン](CONTRIBUTING.md)をご確認ください。
+## 開発プロセス (Antigravity Protocol)
+本プロジェクトはAIエージェントを活用して開発されています。
+- 新機能の追加は `changes/` 配下に **OpenSpec** を作成して行います。
+- エージェントの役割分担については `Agents.md` を参照してください。
 
 ## ライセンス
-
 このプロジェクトは[MITライセンス](LICENSE)の下で公開されています。
