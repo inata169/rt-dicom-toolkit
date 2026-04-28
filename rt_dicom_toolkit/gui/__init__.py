@@ -1,8 +1,3 @@
-"""
-RT DICOM Toolkit のGUIコンポーネント
-"""
+from .main_window import run_app
 
-from .anonymizer_gui import AnonymizerGUI
-from .validator_gui import ValidatorGUI
-
-__all__ = ['AnonymizerGUI', 'ValidatorGUI']
+__all__ = ['run_app']

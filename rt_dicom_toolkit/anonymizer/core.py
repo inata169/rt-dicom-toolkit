@@ -55,6 +55,7 @@ class RTDicomAnonymizer:
         
         # ロガーの設定
         self.logger = setup_logger("RTDicomAnonymizer")
+        self.log_callback = None
         
         # GUI関連の属性
         if self.root:
@@ -70,6 +71,9 @@ class RTDicomAnonymizer:
     def log_message(self, message):
         """ログメッセージを表示とロガーに出力"""
         try:
+            if self.log_callback:
+                self.log_callback(message)
+                
             if self.root and hasattr(self, 'log_text') and self.log_text:
                 self.log_text.insert("end", message + "\n")
                 self.log_text.see("end")
@@ -211,7 +215,7 @@ class RTDicomAnonymizer:
         self.log_message(f"{processed_tags}個のタグを匿名化しました")
         return changes
     
-    def process_directory(self):
+    def process_directory(self, progress_callback=None):
         """
         指定されたディレクトリ内のDICOMファイルを全て匿名化する
         """
@@ -289,6 +293,9 @@ class RTDicomAnonymizer:
                 if self.root and hasattr(self, 'progress_var') and self.progress_var:
                     self.progress_var.set(progress)
                     self.status_var.set(f"処理中... {i+1}/{total_files} ({progress:.1f}%)")
+                
+                if progress_callback:
+                    progress_callback(i + 1, total_files, file_path.name)
                 
                 self.log_message(f"処理中 ({i+1}/{total_files}): {file_path.name}")
                 
