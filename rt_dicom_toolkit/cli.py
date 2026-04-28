@@ -6,9 +6,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from anonymizer import RTDicomAnonymizer
-from validator import RTDicomValidator
-from config import (
+from .anonymizer import RTDicomAnonymizer
+from .validator import RTDicomValidator
+from .config import (
     DEFAULT_INPUT_DIR, DEFAULT_ANONYMOUS_DIR, DEFAULT_LOG_DIR, DEFAULT_REPORT_DIR
 )
 

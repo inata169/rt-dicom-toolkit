@@ -12,7 +12,8 @@ import traceback
 import threading
 
 import pydicom
-from pydicom.uid import generate_uid
+from pydicom.uid import generate_uid, ExplicitVRLittleEndian
+from pydicom.dataset import FileMetaDataset
 
 from ..config import (
     DEFAULT_INPUT_DIR, DEFAULT_ANONYMOUS_DIR, DEFAULT_LOG_DIR,
@@ -94,14 +95,20 @@ class RTDicomAnonymizer:
         if str(original_id) in self.patient_id_map:
             return self.patient_id_map[str(original_id)]
         
-        # 次の連番IDを生成（9000001からスタート）
-        if self.next_patient_id > 9999999:
-            # ID枯渇した場合のハッシュ処理
-            hash_id = int(hashlib.md5(str(original_id).encode()).hexdigest(), 16) % 1000000
-            new_id = f"9{hash_id:06d}"
+        if self.patient_id_method == "sequential":
+            if not hasattr(self, 'patient_counter'):
+                self.patient_counter = 0
+            self.patient_counter += 1
+            new_id = f"Patient_{self.patient_counter:03d}"
         else:
-            new_id = str(self.next_patient_id)
-            self.next_patient_id += 1
+            # 次の連番IDを生成（9000001からスタート）
+            if self.next_patient_id > 9999999:
+                # ID枯渇した場合のハッシュ処理
+                hash_id = int(hashlib.md5(str(original_id).encode()).hexdigest(), 16) % 1000000
+                new_id = f"9{hash_id:06d}"
+            else:
+                new_id = str(self.next_patient_id)
+                self.next_patient_id += 1
             
         # マッピングを保存
         self.patient_id_map[str(original_id)] = new_id
@@ -124,21 +131,11 @@ class RTDicomAnonymizer:
         
         # UID処理の調整
         if self.uid_handling == "consistent":
-            # 一貫性を保つためのUID管理
-            uid_map = {}
+            # 一貫性を保つためのUID管理（self.uid_mapを使用）
             for uid_tag in ["StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "FrameOfReferenceUID"]:
                 if uid_tag in profile:
-                    profile[uid_tag] = lambda x, tag=uid_tag: uid_map.setdefault(
-                        f"{tag}_{x}", generate_uid())
-        
-        # 患者ID変換方法
-        if self.patient_id_method == "sequential":
-            # 患者IDを連番で管理
-            self.patient_counter = 0
-            def sequential_id(x):
-                self.patient_counter += 1
-                return f"Patient_{self.patient_counter:03d}"
-            profile["PatientID"] = sequential_id
+                    profile[uid_tag] = lambda x, tag=uid_tag: self.uid_map.setdefault(
+                        f"{tag}_{str(x)}", generate_uid())
         
         return profile
     
@@ -159,40 +156,26 @@ class RTDicomAnonymizer:
         
         # プライベートタグの処理
         if remove_private_tags:
-            # プライベートタグを検索（再帰的に全ての階層を検索）
-            private_tags = []
-            
-            def find_private_tags(dataset):
-                # 現在のデータセットのプライベートタグを収集
-                current_private_tags = [tag for tag in dataset.keys() if tag.is_private]
-                private_tags.extend(current_private_tags)
+            def remove_private_tags_recursive(dataset):
+                count = 0
+                private_tags = [tag for tag in dataset.keys() if tag.is_private]
+                for tag in private_tags:
+                    try:
+                        del dataset[tag]
+                        count += 1
+                    except Exception as e:
+                        self.logger.warning(f"プライベートタグ {tag} の削除中にエラー: {e}")
                 
                 # シーケンス内の各アイテムを再帰的に処理
                 for elem in dataset.values():
                     if elem.VR == "SQ" and elem.value:
                         for item in elem.value:
                             if item is not None:
-                                find_private_tags(item)
+                                count += remove_private_tags_recursive(item)
+                return count
             
-            # プライベートタグを検索
-            find_private_tags(dcm)
-            
-            # プライベートタグを削除
-            for tag in private_tags:
-                try:
-                    # タグが属するデータセットを特定
-                    if hasattr(tag, 'parent'):
-                        parent_dataset = tag.parent
-                    else:
-                        parent_dataset = dcm
-                    
-                    # タグを削除
-                    if tag in parent_dataset:
-                        del parent_dataset[tag]
-                except Exception as e:
-                    self.logger.warning(f"プライベートタグ {tag} の削除中にエラー: {e}")
-            
-            self.log_message(f"{len(private_tags)}個のプライベートタグを削除しました")
+            removed_count = remove_private_tags_recursive(dcm)
+            self.log_message(f"{removed_count}個のプライベートタグを削除しました")
         
         # 匿名化プロファイルに従ってタグを処理
         processed_tags = 0
@@ -383,8 +366,19 @@ class RTDicomAnonymizer:
                             # 出力ディレクトリが存在することを確認
                             output_path.parent.mkdir(parents=True, exist_ok=True)
                             
-                            # ファイルを保存
-                            dcm.save_as(str(output_path))
+                            # 案B: 標準DICOMファイルメタ情報を強制付与
+                            # (force=Trueで読んだ非標準ファイルも正しく保存される)
+                            if not hasattr(dcm, 'file_meta') or dcm.file_meta is None:
+                                dcm.file_meta = FileMetaDataset()
+                            if not hasattr(dcm.file_meta, 'MediaStorageSOPClassUID') and hasattr(dcm, 'SOPClassUID'):
+                                dcm.file_meta.MediaStorageSOPClassUID = dcm.SOPClassUID
+                            if not hasattr(dcm.file_meta, 'MediaStorageSOPInstanceUID') and hasattr(dcm, 'SOPInstanceUID'):
+                                dcm.file_meta.MediaStorageSOPInstanceUID = dcm.SOPInstanceUID
+                            if not hasattr(dcm.file_meta, 'TransferSyntaxUID') or not dcm.file_meta.TransferSyntaxUID:
+                                dcm.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
+                            
+                            # ファイルを保存（write_like_original=FalseでDICMヘッダーを付与）
+                            dcm.save_as(str(output_path), write_like_original=False)
                             self.log_message(f"匿名化ファイル保存完了: {output_path.name}")
                         except Exception as save_error:
                             self.log_message(f"ファイル保存エラー: {str(save_error)}")

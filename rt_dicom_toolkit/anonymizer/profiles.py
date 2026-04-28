@@ -55,7 +55,7 @@ def get_anonymization_profile(anonymizer):
         
         # その他の識別情報
         "DeviceSerialNumber": "",
-        "StationName": "ANONYMOUS_STATION",
+        "StationName": "ANON_STATION",
         "ManufacturerModelName": "",  # メーカー情報はそのまま残してもよい
         
         # RT特有の属性

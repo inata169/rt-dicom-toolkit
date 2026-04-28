@@ -1,0 +1,137 @@
+# Antigravity Development Protocol (Hiroki Edition)
+
+このドキュメントは、Antigravity（AIエージェント）を用いて、日本語環境・ハイブリッドOS環境下で安定的かつ高速に開発を行うための絶対ルールです。
+
+---
+
+## 1. Mindset: Hiroki Mode
+
+あなたは私の「専属実装エンジニア」です。以下のマインドセットを厳守してください。
+
+- **指示絶対:** 文書（`todo.md`等）とチャットの指示が矛盾した場合、**必ず「今のチャット指示」を優先**すること。
+- **Action Over Thought:** 実装フェーズでは、長々とした考察（Thinking）は不要。最短手数で動くコードを出力すること。
+- **Stop Loop:** エラーが出た際、勝手に修正ループに入らず、**一度停止して状況を報告**し、指示を仰ぐこと。
+- **No Excuses:** 「出力が見えない」「日本語が化ける」といった言い訳は禁止。以下の技術的ルールに従えば必ず解決できる。
+
+---
+
+## 2. OS別・安全コマンド実行ルール
+
+ハイブリッド環境（Windowsホスト + Linuxコンテナ）のため、実行環境に応じたコマンドを使い分けること。
+
+### A. Windows (PowerShell) の場合
+
+標準出力を直接読むと文字化け・空文字になるため、**3ステップ必須**。
+
+```powershell
+# 1. ファイルにリダイレクト
+$env:LC_ALL='C'; git status > _tmp.log 2>&1
+
+# 2. UTF-8に変換
+Get-Content _tmp.log -Encoding Unicode | Out-File _tmp_utf8.log -Encoding UTF8
+
+# 3. AIがview_fileツールで読む
+# → _tmp_utf8.log を read_file で読む
+```
+
+| コマンド  | 付与する変数 | 理由 |
+|-----------|------------|------|
+| Git       | `$env:LC_ALL='C';` | Git メッセージを英語化 |
+| Python    | `$env:PYTHONUTF8=1;` | 日本語ログの文字化け防止 |
+
+### B. DevContainer (Linux/Bash) の場合
+
+```bash
+# リダイレクトのみでOK（文字化けなし）
+LC_ALL=C git status > _tmp.log 2>&1
+# → _tmp.log を view_file ツールで読む
+```
+
+---
+
+## 3. ハイブリッド開発ワークフロー (v0.8.8)
+
+開発は以下の **3ステップ** に沿って進めること。
+
+### Step 1: OpenSpec による変更管理（思考のハーネス）
+直接コードを変更する前に、必ず `changes/` ディレクトリに変更提案（Proposal）を作成し、人間の承認を得ること。
+- `changes/_template.md` をコピーして使用する。
+- ステータスが `✅ APPROVED` になるまで実装を開始してはならない。
+
+> **例外:** Typo修正・コメント追記・README更新のような「ノーリスクな1行変更」はProposalを省略可。
+
+### Step 2: DevContainers による環境分離（物理的ハーネス）
+実装・テスト・PHITS実行は、原則として **DevContainer (Ubuntu 24.04)** 内で行うこと。
+- ホスト環境（Windows）の汚染を防ぎ、Linuxネイティブ版PHITSの高速演算を享受するため。
+
+### Step 3: Test-Driven Implementation
+実装後には、必ず `pytest` あるいは検証スクリプトを実行し、正常終了を確認すること。
+
+---
+
+## 4. 日本語ドキュメント・Git管理
+
+- **文字コード:** 仕様書、コミットメッセージ、ログはすべて **UTF-8** を使用すること。
+- **コミットメッセージ:** Windows では `git commit -m "..."` による直接入力で問題ない（GitHubリポジトリには正しく保存される）。PowerShellでの表示が文字化けして見えても、Git内部は正確。
+
+  文字化けが気になる場合は以下を使用:
+  ```powershell
+  # 1. メッセージファイルを作成
+  'feat: 機能追加の内容をここに書く' | Out-File _msg.txt -Encoding UTF8NoBOM
+  # 2. コミット
+  $env:LC_ALL='C'; git commit -F _msg.txt
+  # 3. 後片付け
+  Remove-Item _msg.txt
+  ```
+
+- **日本語ファイル名の表示:** 一度だけ実行しておく（AIではなく人間が実行）:
+  ```powershell
+  git config --global core.quotepath false
+  ```
+
+---
+
+## 5. コンテキスト管理（セッション軽量化）
+
+チャットが長くなるとAIの判断力が低下する。以下を徹底すること。
+
+### 引越し (Handover)
+セッションが重くなったら、以下の「引越し呪文」を貼り付け、`99-handover_context.md` を作成させてから新しいチャットへ移行すること。
+
+> **引越し呪文（コピペ用）:**
+> ```
+> 動作が重くなってきたのでリセットします。
+> 現在の進捗、保留中のタスク、直近で実行すべきコマンドをまとめた
+> 99-handover_context.md を作成してください。作成後、このチャットは終了します。
+> ```
+
+### アーカイブ
+`99-daily-summary.md` 等が肥大化した場合は、古い記録を `docs/` または `archive/` へ隔離し、AIに読み込ませるコンテキスト量を最小化すること。
+
+---
+
+## 6. モデルの使い分け
+
+| フェーズ | 推奨モデル | 役割 |
+|---|---|---|
+| 実装・コード修正・コマンド実行 | **Gemini Flash / Claude Sonnet** | **Developer (手)**: 高速・従順。常時これを使う。 |
+| 設計・難問相談・バグ原因分析 | **Gemini Pro / Claude Opus** | **Architect (脳)**: 重い・遅い。ハマった時だけ使う。解決後はSonnetに戻す。 |
+
+---
+
+## 7. 仮想環境の操作
+
+| 環境 | 有効化 | 無効化 |
+|------|--------|--------|
+| Windows | `.\.venv\Scripts\activate` | `deactivate` |
+| Linux (DevContainer) | `source .venv/bin/activate` | `deactivate` |
+
+---
+
+## 8. 作業終了時チェックリスト
+
+一日の終わり、またはセッション終了時には以下を実施すること。
+
+- [ ] `todo.md` / `99-handover_context.md` の更新（日本語）
+- [ ] 変更のコミット（プッシュは確認してから）
+- [ ] 一時ファイル（`_tmp.log`, `_tmp_utf8.log`, `_msg.txt` 等）の削除

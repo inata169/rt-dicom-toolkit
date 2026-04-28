@@ -21,6 +21,11 @@ def find_dicom_files(directory):
     for root, _, files in os.walk(directory):
         for file in files:
             file_path = Path(root) / file
+            
+            # 非DICOM拡張子をスキップ
+            if file_path.suffix.lower() in ['.lnk', '.ini', '.txt', '.log']:
+                continue
+                
             try:
                 # DICOMファイルとして読み込めるか確認
                 dcm = pydicom.dcmread(str(file_path), force=True, stop_before_pixels=True)
