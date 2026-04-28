@@ -4,6 +4,8 @@
 
 ## 特徴
 
+![GUI Screenshot](docs/images/gui_screenshot.png)
+
 ### 匿名化ツール
 - **モダンなGUI**: `customtkinter` を採用した直感的でダークモード対応のユーザーインターフェース。
 - **完全・部分匿名化**: 用途に合わせた匿名化レベルの選択が可能。
