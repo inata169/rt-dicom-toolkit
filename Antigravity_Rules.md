@@ -51,7 +51,37 @@ LC_ALL=C git status > _tmp.log 2>&1
 
 ## 3. ハイブリッド開発ワークフロー (v0.8.8)
 
-開発は以下の **3ステップ** に沿って進めること。
+開発は以下の **4ステップ** に沿って進めること。
+
+### Step 0: 作業開始前の同期確認
+作業を始める前に、**最初に `git pull` を実行して最新の `main` 系統を取得**し、その直後に `git status` で作業ツリーが清潔（未コミット変更なし）かを確認すること。
+
+- `git pull` に失敗した場合は、**勝手にコンフリクト解決・再試行・履歴改変を行わず停止**し、人間に報告する。
+- `git status` で未コミット変更が見つかった場合は、**勝手に上書き・`stash`・`reset` を行わず停止**し、人間に報告する。
+- 原則として、変更は **作業ブランチまたはPR単位** で管理する。
+- **`main` への直接 `push` を禁止**する。
+- 作業完了時には、**変更ファイル一覧・テスト結果・未解決事項**を必ず報告する。
+
+通常説明用（簡潔）:
+
+```bash
+git pull
+git status
+```
+
+Ubuntu / Linux:
+
+```bash
+LC_ALL=C git pull > _tmp.log 2>&1
+LC_ALL=C git status >> _tmp.log 2>&1
+```
+
+Windows PowerShell:
+
+```powershell
+$env:LC_ALL='C'; git pull > _tmp.log 2>&1
+$env:LC_ALL='C'; git status >> _tmp.log 2>&1
+```
 
 ### Step 1: OpenSpec による変更管理（思考のハーネス）
 直接コードを変更する前に、必ず `changes/` ディレクトリに変更提案（Proposal）を作成し、人間の承認を得ること。

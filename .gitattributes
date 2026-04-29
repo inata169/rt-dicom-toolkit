@@ -1,0 +1,29 @@
+# Default: normalize text files to LF in the repository
+* text=auto eol=lf
+
+# Keep common source/config/docs as UTF-8 + LF
+*.md   text eol=lf working-tree-encoding=UTF-8
+*.py   text eol=lf working-tree-encoding=UTF-8
+*.toml text eol=lf working-tree-encoding=UTF-8
+*.yaml text eol=lf working-tree-encoding=UTF-8
+*.yml  text eol=lf working-tree-encoding=UTF-8
+*.json text eol=lf working-tree-encoding=UTF-8
+
+# Windows-native scripts may use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# DICOM and image/binary assets
+*.dcm  binary
+*.dicom binary
+*.nii  binary
+*.nii.gz binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.tif  binary
+*.tiff binary
+*.bmp  binary
+*.gif  binary
+*.pdf  binary
