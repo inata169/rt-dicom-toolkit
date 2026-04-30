@@ -58,9 +58,58 @@ def run_validator_cli():
     
     validator.validate_files(validator.original_dir, validator.anonymized_dir)
 
+def run_template_cli():
+    """テンプレート適用のCLIエントリーポイント"""
+    parser = argparse.ArgumentParser(description='RT DICOMテンプレート合成ツール')
+    parser.add_argument('--template', required=True, help='テンプレートDICOMファイルのパス')
+    parser.add_argument('--input', help='情報抽出元のDICOMディレクトリまたはファイル', default=str(DEFAULT_INPUT_DIR))
+    parser.add_argument('--output', help='出力ディレクトリのパス', default=str(DEFAULT_ANONYMOUS_DIR))
+    parser.add_argument('--no-patient', action='store_true', help='患者情報を同期しない')
+    parser.add_argument('--no-geometry', action='store_true', help='幾何学情報を同期しない')
+    args = parser.parse_args(sys.argv[2:])
+    
+    from .template.engine import DICOMTemplateEngine
+    from .utils.file_utils import find_dicom_files
+    
+    engine = DICOMTemplateEngine(args.template)
+    input_path = Path(args.input)
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    sync_patient = not args.no_patient
+    sync_geometry = not args.no_geometry
+    
+    if input_path.is_file():
+        files = [input_path]
+    else:
+        files = find_dicom_files(input_path)
+        
+    print(f"テンプレート: {args.template}")
+    print(f"抽出元: {input_path} ({len(files)} ファイル)")
+    print(f"出力先: {output_dir}")
+    
+    for file_path in files:
+        try:
+            synced_dcm = engine.sync_from_source(
+                str(file_path), 
+                sync_patient=sync_patient, 
+                sync_geometry=sync_geometry
+            )
+            output_path = output_dir / f"tmpl_{file_path.name}"
+            synced_dcm.save_as(str(output_path), write_like_original=False)
+            print(f"  成功: {file_path.name} -> {output_path.name}")
+        except Exception as e:
+            print(f"  エラー ({file_path.name}): {e}")
+
 if __name__ == '__main__':
-    if len(sys.argv) > 1 and sys.argv[1] == 'validate':
-        sys.argv.pop(1)  # 'validate' 引数を削除
-        run_validator_cli()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == 'validate':
+            sys.argv.pop(1)  # 'validate' 引数を削除
+            run_validator_cli()
+        elif sys.argv[1] == 'template':
+            # run_template_cli() 内で parse_args(sys.argv[2:]) を行うためここではpopしない
+            run_template_cli()
+        else:
+            run_anonymizer_cli()
     else:
         run_anonymizer_cli()
