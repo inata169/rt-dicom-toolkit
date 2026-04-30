@@ -54,7 +54,7 @@ LC_ALL=C git status > _tmp.log 2>&1
 開発は以下の **4ステップ** に沿って進めること。
 
 ### Step 0: 作業開始前の同期確認
-作業を始める前に、**最初に `git pull` を実行して最新の `main` 系統を取得**し、その直後に `git status` で作業ツリーが清潔（未コミット変更なし）かを確認すること。
+作業を始める前に、**`origin/main` を明示的に同期**し、その直後に `git status` で作業ツリーが清潔（未コミット変更なし）かを確認すること。
 
 - `git pull` に失敗した場合は、**勝手にコンフリクト解決・再試行・履歴改変を行わず停止**し、人間に報告する。
 - `git status` で未コミット変更が見つかった場合は、**勝手に上書き・`stash`・`reset` を行わず停止**し、人間に報告する。
@@ -65,21 +65,27 @@ LC_ALL=C git status > _tmp.log 2>&1
 通常説明用（簡潔）:
 
 ```bash
-git pull
+git fetch origin
+git checkout main
+git pull origin main
 git status
 ```
 
 Ubuntu / Linux:
 
 ```bash
-LC_ALL=C git pull > _tmp.log 2>&1
+LC_ALL=C git fetch origin > _tmp.log 2>&1
+LC_ALL=C git checkout main >> _tmp.log 2>&1
+LC_ALL=C git pull origin main >> _tmp.log 2>&1
 LC_ALL=C git status >> _tmp.log 2>&1
 ```
 
 Windows PowerShell:
 
 ```powershell
-$env:LC_ALL='C'; git pull > _tmp.log 2>&1
+$env:LC_ALL='C'; git fetch origin > _tmp.log 2>&1
+$env:LC_ALL='C'; git checkout main >> _tmp.log 2>&1
+$env:LC_ALL='C'; git pull origin main >> _tmp.log 2>&1
 $env:LC_ALL='C'; git status >> _tmp.log 2>&1
 ```
 
@@ -89,6 +95,12 @@ $env:LC_ALL='C'; git status >> _tmp.log 2>&1
 - ステータスが `✅ APPROVED` になるまで実装を開始してはならない。
 
 > **例外:** Typo修正・コメント追記・README更新のような「ノーリスクな1行変更」はProposalを省略可。
+>
+> 具体条件（省略可の目安）:
+> - 変更ファイルが **2ファイル以内**
+> - 実コード変更が **10行以内**（コメント/ドキュメント除く）
+> - 実行ロジック・依存関係・設定値に影響しない
+> - テスト追加が不要で、既存テスト結果に影響しない
 
 ### Step 2: ブランチ作成と実装（物理的ハーネス）
 
@@ -111,6 +123,12 @@ $env:LC_ALL='C'; git push origin feat/your-feature-name
 
 ### Step 3: Test-Driven Implementation
 実装後には、必ず `pytest` あるいは検証スクリプトを実行し、正常終了を確認すること。
+
+最低報告要件（PR本文または作業報告に記載）:
+- 実行した **コマンドをそのまま記載**（例: `pytest -q`）
+- **PASS/FAIL の結果**
+- GUI変更を含む場合は、**起動確認手順**（例: `python check_anonymization_gui.py`）を記載
+- ログファイルを使った場合は、**保存先パス**（例: `_tmp.log`）を記載
 
 ### Step 4: Pull Request 作成・マージ・同期
 
@@ -186,6 +204,8 @@ $env:LC_ALL='C'; git branch -d feat/your-feature-name
 | 実装・コード修正・コマンド実行 | **Gemini Flash / Claude Sonnet** | **Developer (手)**: 高速・従順。常時これを使う。 |
 | 設計・難問相談・バグ原因分析 | **Gemini Pro / Claude Opus** | **Architect (脳)**: 重い・遅い。ハマった時だけ使う。解決後はSonnetに戻す。 |
 
+> 補足: モデル名は例示。将来の更新時は、**役割（高速実装向け / 深掘り分析向け）**を満たす最新モデルへ読み替えてよい。
+
 ---
 
 ## 7. 仮想環境の操作
@@ -204,5 +224,6 @@ $env:LC_ALL='C'; git branch -d feat/your-feature-name
 - [ ] `todo.md` / `99-handover_context.md` の更新（日本語）
 - [ ] 変更のコミット & 作業ブランチへのプッシュ
 - [ ] `gh pr create` でPRを作成し、URLを人間に報告
-- [ ] 人間のマージ完了後: `git checkout main` → `git pull` → `git branch -d <作業ブランチ>`
+- [ ] 人間のマージ完了後: `git checkout main` → `git pull origin main` → `git branch -d <作業ブランチ>`
+- [ ] `git branch -d` が失敗した場合は、未マージ差分を確認してから人間に報告（自己判断で `-D` しない）
 - [ ] 一時ファイル（`_tmp.log`, `_tmp_utf8.log`, `_msg.txt` 等）の削除
