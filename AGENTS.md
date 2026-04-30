@@ -28,7 +28,7 @@
 3. **実装 (Developer):** 承認された OpenSpec に従い、Developer Agent がコードを実装・検証する。
 4. **報告 (Developer):** テストがすべてPASSしたことを人間に報告し、`gh pr create` でPRを作成してURLを渡す。
 5. **マージ (Human):** 人間がGitHub画面上で「Merge pull request」を押す。
-6. **同期 (Developer):** マージ完了の連絡を受けたら、`git checkout main` → `git pull` → `git branch -d <作業ブランチ>` で後片付けする。
+6. **同期 (Developer):** マージ完了の連絡を受けたら、`git checkout main` → `git pull origin main` → `git branch -d <作業ブランチ>` で後片付けする。
 
 ---
 
