@@ -8,6 +8,8 @@
 - [x] GitHubリポジトリへの登録とREADMEの更新
 
 ## 次の目標
-- [ ] Universal DICOM Template の実装（PHITS-to-DICOMパイプラインの安定化） (OpenSpec: 004_universal_template)
+- [x] DICOM匿名化チェッカー (CLI & GUI) の実装 (OpenSpec: 002)
+- [x] 内部UID参照の一貫性保持機能の実装 (OpenSpec: 003)
+- [x] Universal DICOM Template の実装 (OpenSpec: 004)
 - [ ] 検証スクリプトの詳細化
 - [ ] PyInstallerによる実行ファイル化の検討
