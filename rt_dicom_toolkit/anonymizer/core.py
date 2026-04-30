@@ -134,14 +134,27 @@ class RTDicomAnonymizer:
                     del profile[key]
         
         # UID処理の調整
-        if self.uid_handling == "consistent":
-            # 一貫性を保つためのUID管理（self.uid_mapを使用）
+        if self.uid_handling == "generate":
             for uid_tag in ["StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "FrameOfReferenceUID"]:
                 if uid_tag in profile:
-                    profile[uid_tag] = lambda x, tag=uid_tag: self.uid_map.setdefault(
-                        f"{tag}_{str(x)}", generate_uid())
+                    profile[uid_tag] = lambda x: generate_uid()
         
         return profile
+    
+    def _replace_uid_references(self, dataset):
+        """データセット内の全UIタグをuid_mapに基づき再帰的に置換"""
+        replaced = 0
+        for elem in dataset:
+            if elem.VR == "SQ" and elem.value:
+                for item in elem.value:
+                    if item is not None:
+                        replaced += self._replace_uid_references(item)
+            elif elem.VR == "UI" and elem.value:
+                old_uid = str(elem.value)
+                if old_uid in self.uid_map:
+                    elem.value = self.uid_map[old_uid]
+                    replaced += 1
+        return replaced
     
     def anonymize_dicom(self, dcm, anonymization_profile, remove_private_tags=True):
         """
@@ -284,7 +297,25 @@ class RTDicomAnonymizer:
             anonymization_profile = self.get_modified_anonymization_profile()
             self.log_message("匿名化プロファイルを設定しました")
             
-            # 入力ディレクトリ内のファイルを処理
+            # --- Pass 1: UIDマッピングの収集 ---
+            if self.uid_handling == "consistent":
+                self.log_message("Pass 1: UIDマッピングを収集しています...")
+                for i, file_path in enumerate(dicom_files):
+                    try:
+                        dcm_pass1 = pydicom.dcmread(str(file_path), force=True, stop_before_pixels=True)
+                        for tag in ["StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "FrameOfReferenceUID"]:
+                            if hasattr(dcm_pass1, tag):
+                                old_uid = str(getattr(dcm_pass1, tag))
+                                if old_uid and old_uid not in self.uid_map:
+                                    self.uid_map[old_uid] = generate_uid()
+                    except pydicom.errors.InvalidDicomError:
+                        pass
+                    except Exception as e:
+                        self.logger.warning(f"Pass 1処理エラー {file_path.name}: {str(e)}")
+                self.log_message(f"Pass 1完了: {len(self.uid_map)}個のUIDをマッピングしました")
+            
+            # --- Pass 2: 実際の匿名化処理 ---
+            self.log_message("Pass 2: 匿名化処理を開始します...")
             for i, file_path in enumerate(dicom_files):
                 summary["処理ファイル数"] += 1
                 
@@ -349,6 +380,11 @@ class RTDicomAnonymizer:
                         
                         # DICOMファイルを匿名化
                         changes = self.anonymize_dicom(dcm, anonymization_profile, remove_private_tags)
+                        
+                        # UIDの参照を再帰的に置換
+                        if self.uid_handling == "consistent":
+                            replaced_refs = self._replace_uid_references(dcm)
+                            self.log_message(f"{replaced_refs}箇所のUID参照を置換しました")
                         
                         # 匿名化されたDICOMを保存
                         try:
