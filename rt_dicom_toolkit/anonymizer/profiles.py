@@ -38,10 +38,10 @@ def get_anonymization_profile(anonymizer):
         "OperatorsName": "",
         
         # 識別子
-        "StudyInstanceUID": lambda x: generate_uid(),
-        "SeriesInstanceUID": lambda x: generate_uid(),
-        "SOPInstanceUID": lambda x: generate_uid(),
-        "FrameOfReferenceUID": lambda x: generate_uid(),
+        "StudyInstanceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
+        "SeriesInstanceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
+        "SOPInstanceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
+        "FrameOfReferenceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
         
         # 日付と時刻（完全に匿名化）
         "StudyDate": "20000101",
