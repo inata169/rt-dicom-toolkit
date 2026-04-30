@@ -49,7 +49,7 @@ LC_ALL=C git status > _tmp.log 2>&1
 
 ---
 
-## 3. ハイブリッド開発ワークフロー (v0.8.8)
+## 3. ハイブリッド開発ワークフロー (v0.9.0)
 
 開発は以下の **4ステップ** に沿って進めること。
 
@@ -90,12 +90,51 @@ $env:LC_ALL='C'; git status >> _tmp.log 2>&1
 
 > **例外:** Typo修正・コメント追記・README更新のような「ノーリスクな1行変更」はProposalを省略可。
 
-### Step 2: DevContainers による環境分離（物理的ハーネス）
-実装・テスト・PHITS実行は、原則として **DevContainer (Ubuntu 24.04)** 内で行うこと。
-- ホスト環境（Windows）の汚染を防ぎ、Linuxネイティブ版PHITSの高速演算を享受するため。
+### Step 2: ブランチ作成と実装（物理的ハーネス）
+
+実装は必ず **`main` から切った作業ブランチ**上で行うこと。ブランチ名は `feat/`, `fix/`, `docs/` 等のプレフィックスを付ける。
+
+```powershell
+# 作業ブランチを作成して切り替え
+$env:LC_ALL='C'; git checkout -b feat/your-feature-name
+```
+
+実装・テストが完了したら、ブランチをリモートへプッシュする。
+
+```powershell
+$env:LC_ALL='C'; git add <変更ファイル>
+$env:LC_ALL='C'; git commit -m "feat: 変更内容の簡潔な説明"
+$env:LC_ALL='C'; git push origin feat/your-feature-name
+```
+
+> DevContainer (Ubuntu 24.04) が必要な場合はコンテナ内で作業し、Linux環境でのテストを実施する。
 
 ### Step 3: Test-Driven Implementation
 実装後には、必ず `pytest` あるいは検証スクリプトを実行し、正常終了を確認すること。
+
+### Step 4: Pull Request 作成・マージ・同期
+
+テストPASS後、**GitHub CLI (`gh`) を使ってPRを作成**する。
+
+```powershell
+# PRを作成（--body-file でOpenSpecを本文として添付可能）
+gh pr create --base main --head feat/your-feature-name `
+  --title "feat: 変更内容の簡潔な説明" `
+  --body-file changes/00X_your_spec.md
+```
+
+作成されたPR URLを人間に報告し、**人間がGitHub上でマージ**を行う。
+
+マージ完了の報告を受けたら、ローカル環境を同期して後片付けする。
+
+```powershell
+# mainに戻って最新をプル
+$env:LC_ALL='C'; git checkout main
+$env:LC_ALL='C'; git pull origin main
+
+# 作業ブランチをローカルから削除
+$env:LC_ALL='C'; git branch -d feat/your-feature-name
+```
 
 ---
 
@@ -163,5 +202,7 @@ $env:LC_ALL='C'; git status >> _tmp.log 2>&1
 一日の終わり、またはセッション終了時には以下を実施すること。
 
 - [ ] `todo.md` / `99-handover_context.md` の更新（日本語）
-- [ ] 変更のコミット（プッシュは確認してから）
+- [ ] 変更のコミット & 作業ブランチへのプッシュ
+- [ ] `gh pr create` でPRを作成し、URLを人間に報告
+- [ ] 人間のマージ完了後: `git checkout main` → `git pull` → `git branch -d <作業ブランチ>`
 - [ ] 一時ファイル（`_tmp.log`, `_tmp_utf8.log`, `_msg.txt` 等）の削除

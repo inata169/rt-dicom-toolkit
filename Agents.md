@@ -26,7 +26,9 @@
 1. **提案 (Architect/Developer):** 新機能や大きな変更を行う場合、エージェントは `changes/` に OpenSpec 形式で提案書を作成する。
 2. **レビュー (Human):** 人間が OpenSpec を確認し、ステータスを `✅ APPROVED` に変更する。
 3. **実装 (Developer):** 承認された OpenSpec に従い、Developer Agent がコードを実装・検証する。
-4. **報告 (Developer):** テストがすべてPASSしたことを人間に報告し、作業を完了する。
+4. **報告 (Developer):** テストがすべてPASSしたことを人間に報告し、`gh pr create` でPRを作成してURLを渡す。
+5. **マージ (Human):** 人間がGitHub画面上で「Merge pull request」を押す。
+6. **同期 (Developer):** マージ完了の連絡を受けたら、`git checkout main` → `git pull` → `git branch -d <作業ブランチ>` で後片付けする。
 
 ---
 
