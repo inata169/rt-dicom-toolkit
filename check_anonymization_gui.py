@@ -6,8 +6,8 @@ DICOM Anonymization Checker GUI
 """
 
 import os
+import queue
 import threading
-from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -67,6 +67,8 @@ class CheckerGUI(ctk.CTk):
         self.log_textbox.pack(fill="both", expand=True, padx=10, pady=10)
         
         self.checker = AnonymizationChecker()
+        self._ui_queue = queue.Queue()
+        self._ui_flush_scheduled = False
 
     def _setup_scan_tab(self):
         tab = self.tabview.tab("単独スキャン (Scan)")
@@ -123,8 +125,33 @@ class CheckerGUI(ctk.CTk):
             string_var.set(dir_path)
 
     def log_gui(self, message):
+        if threading.current_thread() is not threading.main_thread():
+            self._enqueue_ui_action(self.log_gui, message)
+            return
         self.log_textbox.insert("end", message + "\n")
         self.log_textbox.see("end")
+
+    def _enqueue_ui_action(self, callback, *args, **kwargs):
+        self._ui_queue.put((callback, args, kwargs))
+        self._schedule_ui_flush()
+
+    def _schedule_ui_flush(self):
+        if self._ui_flush_scheduled:
+            return
+        self._ui_flush_scheduled = True
+        self.after(0, self._process_ui_queue)
+
+    def _process_ui_queue(self):
+        self._ui_flush_scheduled = False
+        while True:
+            try:
+                callback, args, kwargs = self._ui_queue.get_nowait()
+            except queue.Empty:
+                return
+            callback(*args, **kwargs)
+
+    def _clear_log(self):
+        self.log_textbox.delete("1.0", "end")
 
     def _run_scan(self):
         target = self.scan_dir_var.get()
@@ -132,7 +159,7 @@ class CheckerGUI(ctk.CTk):
             messagebox.showerror("エラー", "有効なディレクトリを選択してください。")
             return
             
-        self.log_textbox.delete("1.0", "end")
+        self._clear_log()
         self.log_gui(f"[*] スキャンモードを開始します...\n対象: {target}\n")
         
         # Override console print with GUI print temporarily
@@ -146,8 +173,7 @@ class CheckerGUI(ctk.CTk):
             except Exception as e:
                 self.log_gui(f"\n[エラー] {str(e)}")
             finally:
-                self.checker.print_colored = original_print
-                self.log_gui("\n処理が完了しました。")
+                self._enqueue_ui_action(self._on_background_task_done, original_print)
 
         threading.Thread(target=task, daemon=True).start()
 
@@ -159,7 +185,7 @@ class CheckerGUI(ctk.CTk):
             messagebox.showerror("エラー", "両方の有効なディレクトリを選択してください。")
             return
             
-        self.log_textbox.delete("1.0", "end")
+        self._clear_log()
         self.log_gui(f"[*] ペア比較モードを開始します...\n原本: {orig}\n匿名化: {anon}\n")
         
         # Override console print with GUI print temporarily
@@ -173,10 +199,13 @@ class CheckerGUI(ctk.CTk):
             except Exception as e:
                 self.log_gui(f"\n[エラー] {str(e)}")
             finally:
-                self.checker.print_colored = original_print
-                self.log_gui("\n処理が完了しました。")
+                self._enqueue_ui_action(self._on_background_task_done, original_print)
 
         threading.Thread(target=task, daemon=True).start()
+
+    def _on_background_task_done(self, original_print):
+        self.checker.print_colored = original_print
+        self.log_gui("\n処理が完了しました。")
 
 if __name__ == "__main__":
     app = CheckerGUI()
