@@ -15,10 +15,13 @@ def main():
         run_app()
     else:
         # 引数がある場合はCLIへ委譲
-        from .cli import run_anonymizer_cli, run_validator_cli
+        from .cli import run_anonymizer_cli, run_validator_cli, run_template_cli
         if sys.argv[1] == 'validate':
             sys.argv.pop(1)
             run_validator_cli()
+        elif sys.argv[1] == 'template':
+            # run_template_cli()内でsys.argv[2:]をパースする
+            run_template_cli()
         else:
             run_anonymizer_cli()
 
