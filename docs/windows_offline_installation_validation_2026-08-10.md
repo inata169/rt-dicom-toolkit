@@ -4,15 +4,18 @@
 
 - リポジトリ: `inata169/rt-dicom-toolkit`
 - バンドル: `rt-dicom-toolkit-offline-win64-1.0.0.zip`
+- バンドル作成元コミット: `0958d6fe02a1008dce30c19b1d3e25b4573968f9`
 - バンドルSHA-256:
-  `6f8a8fa07f71dd910c21af677279e74a865353f76f945fe544f7b2b36826b30a`
+  `4eedac1bddad2166779260e42fb2af3034014e0cac4370387d37221c3fedbc8d`
 - 対象Python: CPython 3.12.10 x64
 - 対象OS: Windows 10 x64
 
 ## 自動検証
 
-開発環境では、外部通信先を到達不能な`127.0.0.1:9`へ固定した状態で、展開した
-バンドルの`install_offline.bat`を実行した。
+開発環境では、外部通信先を到達不能な`127.0.0.1:9`へ固定し、`PIP_FIND_LINKS`、
+`PIP_INDEX_URL`、`PIP_EXTRA_INDEX_URL`を到達不能なURLへ設定した状態で、展開した
+バンドルの`install_offline.bat`を実行した。`PYTHONHOME`と`PYTHONPATH`にも無効な
+パスを設定し、バッチファイルによる環境分離を確認した。
 
 | 確認項目 | 結果 |
 | --- | --- |
@@ -20,13 +23,16 @@
 | ZIP内ペイロード59ファイルのSHA-256 | PASS |
 | 固定依存wheel 17個＋アプリwheel 1個 | PASS |
 | 専用`.venv`の作成 | PASS |
-| `--no-index`でのwheel導入 | PASS |
+| `--isolated --no-index`でのwheel導入 | PASS |
+| 非Python実行ファイルへ置換した`.venv`の検出・再作成 | PASS |
+| 旧`.venv`内データの退避とSHA-256一致 | PASS |
+| 同一版アプリファイル破損後の強制再導入 | PASS |
 | `pip check` | PASS |
 | 合成DICOM匿名化 | PASS |
 | 匿名化前後の検証 | PASS |
 | Universal Template同期 | PASS |
 | GUI依存のimport | PASS |
-| pytest | 14件PASS |
+| pytest | 17件PASS |
 
 スモークテストには実患者データを使用せず、実行時に生成して終了時に削除する最小の
 合成CT DICOMだけを使用した。
