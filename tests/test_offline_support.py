@@ -150,6 +150,10 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert "import pip,setuptools,struct,sys,wheel" in builder
     assert "@($Candidate.Prefix) -I -c" in builder
     assert "@($script:ProducerPython.Prefix) -I @Arguments" in builder
+    assert "$env:PYTHONHOME = $null" in builder
+    assert "$env:PYTHONPATH = $null" in builder
+    assert "$env:PYTHONHOME = $OldPythonHome" in builder
+    assert "$env:PYTHONPATH = $OldPythonPath" in builder
     assert "with pip, setuptools, and wheel is required" in builder
     assert '"-m", "pip", "--isolated", "download"' in builder
     assert '"--index-url", "https://pypi.org/simple"' in builder

@@ -44,13 +44,26 @@ function Resolve-ProducerPython {
     }
 
     foreach ($Candidate in $Candidates) {
+        $OldPythonHome = $env:PYTHONHOME
+        $OldPythonPath = $env:PYTHONPATH
+        $Probe = $null
+        $ProbeExitCode = -1
         try {
-            $Probe = & $Candidate.Executable @($Candidate.Prefix) -I -c "import pip,setuptools,struct,sys,wheel; print('ok' if sys.version_info[:2] == (3,12) and struct.calcsize('P')*8 == 64 else 'unsupported')" 2>$null
+            $env:PYTHONHOME = $null
+            $env:PYTHONPATH = $null
+            try {
+                $Probe = & $Candidate.Executable @($Candidate.Prefix) -I -c "import pip,setuptools,struct,sys,wheel; print('ok' if sys.version_info[:2] == (3,12) and struct.calcsize('P')*8 == 64 else 'unsupported')" 2>$null
+                $ProbeExitCode = $LASTEXITCODE
+            }
+            catch {
+                $ProbeExitCode = -1
+            }
         }
-        catch {
-            continue
+        finally {
+            $env:PYTHONHOME = $OldPythonHome
+            $env:PYTHONPATH = $OldPythonPath
         }
-        if ($LASTEXITCODE -eq 0 -and ($Probe | Select-Object -Last 1) -eq "ok") {
+        if ($ProbeExitCode -eq 0 -and ($Probe | Select-Object -Last 1) -eq "ok") {
             return $Candidate
         }
     }
@@ -66,17 +79,29 @@ function Invoke-ProducerPython {
         [switch]$Capture
     )
 
-    if ($Capture) {
-        $Output = & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) -I @Arguments
-        if ($LASTEXITCODE -ne 0) {
-            throw "Producer Python command failed with exit code $LASTEXITCODE."
+    $OldPythonHome = $env:PYTHONHOME
+    $OldPythonPath = $env:PYTHONPATH
+    $Output = $null
+    try {
+        $env:PYTHONHOME = $null
+        $env:PYTHONPATH = $null
+        if ($Capture) {
+            $Output = & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) -I @Arguments
         }
-        return $Output
+        else {
+            & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) -I @Arguments
+        }
+        $ExitCode = $LASTEXITCODE
     }
-
-    & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) -I @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Producer Python command failed with exit code $LASTEXITCODE."
+    finally {
+        $env:PYTHONHOME = $OldPythonHome
+        $env:PYTHONPATH = $OldPythonPath
+    }
+    if ($ExitCode -ne 0) {
+        throw "Producer Python command failed with exit code $ExitCode."
+    }
+    if ($Capture) {
+        return $Output
     }
 }
 
