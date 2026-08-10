@@ -168,7 +168,7 @@ try {
     $OldConfig = $env:PIP_CONFIG_FILE
     try {
         $env:PIP_NO_INDEX = "1"
-        $env:PIP_CONFIG_FILE = "NUL"
+        $env:PIP_CONFIG_FILE = "nul"
         Invoke-ProducerPython -Arguments @(
             "-m", "pip", "wheel",
             "--disable-pip-version-check",

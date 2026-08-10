@@ -65,7 +65,7 @@ def test_offline_installer_forbids_package_index_access():
     )
     lower = installer.lower()
     assert "pip_no_index=1" in lower
-    assert "pip_config_file=nul" in lower
+    assert 'set "PIP_CONFIG_FILE=nul"' in installer
     assert "--no-index" in lower
     assert "--find-links" in lower
     assert "--only-binary=:all:" in lower
@@ -146,6 +146,7 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert '"--no-cache-dir"' in builder
     assert ".Replace($VersionToken, $ProjectVersion)" in builder
     assert "exactly one project-version token" in builder
+    assert '$env:PIP_CONFIG_FILE = "nul"' in builder
     assert '"--only-binary=:all:"' in builder
     assert '"--no-deps"' in builder
     assert "SHA256SUMS.txt" in builder

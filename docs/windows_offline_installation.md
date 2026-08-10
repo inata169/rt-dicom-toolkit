@@ -89,7 +89,7 @@ pipには次の通信禁止設定が常に指定されます。
 
 ```text
 PIP_NO_INDEX=1
-PIP_CONFIG_FILE=NUL
+PIP_CONFIG_FILE=nul
 --no-index
 --find-links <同梱wheelhouse>
 --only-binary=:all:
