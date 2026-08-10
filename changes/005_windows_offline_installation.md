@@ -84,7 +84,7 @@ PowerShell スクリプトを追加し、次を一括実行する。
   - CPython 3.12.10 x64がなければ、同梱 Python をローカルの専用ランタイムへ
     無人導入する。互換Pythonが既にある場合は仮想環境の作成元にのみ使用する。
   - バンドル内に専用 `.venv` を作る。
-  - `PIP_NO_INDEX=1`, `PIP_CONFIG_FILE=NUL`, `--no-index`,
+  - `PIP_NO_INDEX=1`, `PIP_CONFIG_FILE=nul`, `--isolated`, `--no-index`,
     `--find-links` を指定し、同梱 wheel だけからインストールする。
   - `pip check` と import 確認を行う。
 - `start_rt_dicom_toolkit.bat`
@@ -145,21 +145,25 @@ PowerShell スクリプトを追加し、次を一括実行する。
 ## 6. 実装・検証結果
 
 - 実施日: 2026-08-10
-- CPython 3.12.10 x64で既存9件と追加5件、合計14件のpytestがPASS。
+- CPython 3.12.10 x64で合計17件のpytestがPASS。
 - Python 3.12.10 x64公式インストーラのAuthenticode署名は`Valid`、署名者は
   Python Software Foundationであることを確認。
 - 固定依存wheel 17個とアプリwheel 1個、合計18個を収録。
 - ZIP内のペイロード59ファイルすべてについてSHA-256検証がPASS。
-- HTTP/HTTPS/ALL proxyを到達不能な`127.0.0.1:9`へ設定した状態で、専用`.venv`の
-  作成、`--no-index`インストール、`pip check`、合成DICOMスモークテストがPASS。
+- HTTP/HTTPS/ALL proxyとpip取得元を到達不能な`127.0.0.1:9`へ設定した状態で、
+  専用`.venv`の作成、`--isolated --no-index`インストール、`pip check`、
+  合成DICOMスモークテストがPASS。
+- `python.exe`欠損・非Python実行ファイル置換の各`.venv`を検出して再作成し、
+  旧データのSHA-256一致と同一版パッケージの破損修復を確認。
 - 専用`.venv`のPythonは3.12.10、64-bitで、アプリが同仮想環境の
   `site-packages`から読み込まれることを確認。
-- 実GUIの目視起動と、物理的にネットワークを切断したWindows 10実機での最終確認は
-  導入先PCで行う手動確認項目として残る。
+- 物理的にネットワークを切断したWindows 10実機で、GUIの導入・起動・利用が
+  正常に行えることを利用者が確認。
 
 生成物:
 
 ```text
 dist/rt-dicom-toolkit-offline-win64-1.0.0.zip
-SHA-256: 6f8a8fa07f71dd910c21af677279e74a865353f76f945fe544f7b2b36826b30a
+source commit: 898e2d8adc3060764041fb6814cd59597cac594d
+SHA-256: bb4912e2286ed60ed1ade7aee9a86b00f09b4beeb5dbe3df7d86ad71eca8e642
 ```

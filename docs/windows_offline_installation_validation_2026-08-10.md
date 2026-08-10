@@ -4,16 +4,17 @@
 
 - リポジトリ: `inata169/rt-dicom-toolkit`
 - バンドル: `rt-dicom-toolkit-offline-win64-1.0.0.zip`
-- バンドル作成元コミット: `ff1a08b91d938a86287d35bc25af79ffac3f3c62`
+- バンドル作成元コミット: `898e2d8adc3060764041fb6814cd59597cac594d`
 - バンドルSHA-256:
-  `36e2074be41bbbd2043a18ec28f98621b29148766d4c98f940884d1e5fdf77da`
+  `bb4912e2286ed60ed1ade7aee9a86b00f09b4beeb5dbe3df7d86ad71eca8e642`
 - 対象Python: CPython 3.12.10 x64
 - 対象OS: Windows 10 x64
 
 ## 自動検証
 
-バンドル作成は`PYTHONHOME`と`PYTHONPATH`に無効なパスを設定した状態で実行し、
-producer Pythonとそのビルドサブプロセスが継承環境から隔離されることを確認した。
+バンドル作成は`PYTHONHOME`と`PYTHONPATH`に無効なパスを設定し、さらに
+`PIP_REQUIRE_VIRTUALENV=1`とした状態で実行した。producer Python、依存取得、
+アプリwheelビルドが継承環境から隔離されることを確認した。
 
 開発環境では、外部通信先を到達不能な`127.0.0.1:9`へ固定し、`PIP_FIND_LINKS`、
 `PIP_INDEX_URL`、`PIP_EXTRA_INDEX_URL`を到達不能なURLへ設定した状態で、展開した
