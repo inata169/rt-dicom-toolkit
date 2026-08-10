@@ -17,6 +17,7 @@ def test_patient_dicom_ignore_rules_are_case_insensitive():
     assert "*.[Dd][Cc][Mm]" in ignore
     assert "*.[Dd][Ii][Cc][Oo][Mm]" in ignore
     assert "*.[Dd][Ii][Rr]" in ignore
+    assert "[Dd][Ii][Cc][Oo][Mm][Dd][Ii][Rr]" in ignore
     assert "*.[Nn][Ii][Ii]" in ignore
     assert "*.[Nn][Ii][Ii].[Gg][Zz]" in ignore
 
