@@ -107,6 +107,6 @@ exit /b 0
 :select_python
 if defined BASE_PYTHON exit /b 0
 if not exist "%~1" exit /b 0
-"%~1" -c "import struct,sys; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
+"%~1" -c "import struct,sys,tkinter; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
 if not errorlevel 1 set "BASE_PYTHON=%~1"
 exit /b 0

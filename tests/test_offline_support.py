@@ -7,6 +7,14 @@ from tools.offline_smoke_test import run_smoke_test
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_patient_dicom_ignore_rules_are_case_insensitive():
+    ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "/[Dd][Ii][Cc][Oo][Mm]/" in ignore
+    assert "/[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/" in ignore
+    assert "*.[Dd][Cc][Mm]" in ignore
+    assert "*.[Dd][Ii][Rr]" in ignore
+
+
 def test_offline_lock_is_complete_and_exact():
     lock_path = ROOT / "requirements" / "offline-win64-py312.txt"
     requirements = [
@@ -48,6 +56,7 @@ def test_offline_installer_forbids_package_index_access():
     assert "--find-links" in lower
     assert "--only-binary=:all:" in lower
     assert 'call :select_python' in lower
+    assert "import struct,sys,tkinter; raise systemexit" in lower
     assert '"%base_python%" -m venv' in lower
     assert "http://" not in lower
     assert "https://" not in lower
