@@ -156,6 +156,7 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert "$env:PYTHONPATH = $OldPythonPath" in builder
     assert "with pip, setuptools, and wheel is required" in builder
     assert '"-m", "pip", "--isolated", "download"' in builder
+    assert '"-m", "pip", "--isolated", "wheel"' in builder
     assert '"--index-url", "https://pypi.org/simple"' in builder
     assert '"--no-cache-dir"' in builder
     assert "$OldDownloadConfig = $env:PIP_CONFIG_FILE" in builder

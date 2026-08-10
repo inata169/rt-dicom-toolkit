@@ -202,7 +202,7 @@ try {
         $env:PIP_NO_INDEX = "1"
         $env:PIP_CONFIG_FILE = "nul"
         Invoke-ProducerPython -Arguments @(
-            "-m", "pip", "wheel",
+            "-m", "pip", "--isolated", "wheel",
             "--disable-pip-version-check",
             "--no-index",
             "--no-deps",
