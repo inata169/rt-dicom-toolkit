@@ -44,6 +44,7 @@ build/
 python-*-amd64.exe
 /.offline-install-validation-*/
 /.test-tmp-*/
+/.pytest_cache/
 
 # DICOMデータ・派生ログ（患者由来データを含む可能性があるためコミット禁止）
 [Dd][Ii][Cc][Oo][Mm]/

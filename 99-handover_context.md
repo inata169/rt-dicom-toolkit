@@ -1,34 +1,44 @@
 # セッション終了・引継ぎドキュメント (99-handover_context.md)
 
-## 1. 今回の作業の進捗状況
-- **内部UID参照の一貫性保持機能の実装 (OpenSpec: 003)**: 
-  - `core.py` のディレクトリ処理を2パス構造（Pass1: UID収集、Pass2: 匿名化＋参照置換）に改修。
-  - シーケンス内部のVR=UIタグを再帰的に走査し、`uid_map` に基づいて置換する `_replace_uid_references` を実装。
-  - `profiles.py` のUID処理を `uid_map` に統一。
-  - `tests/test_uid_consistency.py` を作成し、一連の変更の正常動作（pytest）を確認。
-- **Git管理**:
-  - `feat/uid-consistency` ブランチの内容を `main` へマージ完了（PR #10）。
-  - マージ後のローカルのブランチ削除と一時ログファイルのクリーンアップを実施。
+## 1. 2026-08-10 の完了内容
+
+- **Windows 10向けオフライン導入対応 (OpenSpec: 005)**:
+  - Python 3.12本体、依存wheel、リポジトリ本体をオンラインPCで収集する仕組みを追加。
+  - オフラインPC専用の仮想環境を作成し、外部通信なしで導入・修復できるWindowsバッチを追加。
+  - 合成した非患者DICOMを使用するスモークテストと、導入・検証手順書を追加。
+  - オフラインWindows 10 PCでGUIのインストールと主要操作が正常に動作することを人間が確認済み。
+- **レビューとGit管理**:
+  - Codexレビュー指摘への対応と再レビューを完了し、未解決スレッドは0件。
+  - PR #16をsquash merge済み。マージコミットは `892e98d259b4b1611fbbcd628f1bf175bee4af44`。
+  - PR #16のリモート・ローカル作業ブランチは削除済みで、`main` は `origin/main` と同期済み。
 
 ## 2. 現在のステータス
-- **リポジトリ**: `main` ブランチは最新（OpenSpec 003 統合済み）。
-- **テスト**: `pytest tests/` にて全テストケース（6件）PASS。
+
+- **テスト**: `python -m pytest -p no:cacheprovider --basetemp C:\tmp\rt-dicom-toolkit-pytest-eod-20260810 tests/` で17件すべてPASS。
+- **配布ZIP**: `dist\rt-dicom-toolkit-offline-win64-1.0.0.zip`
+- **SHA-256**: `BB4912E2286ED60ED1ADE7AEE9A86B00F09B4BEEB5DBE3DF7D86AD71ECA8E642`
+- **Git除外**: `dist/`、wheel、Python本体、検証用一時ディレクトリはGitHubへpushしない設定。
+- **患者情報**: 実患者由来DICOMは使用・コミットしていない。
 
 ## 3. 保留中のタスク / 次のステップ
-- [ ] **Universal DICOM Template の実装**: PHITS-to-DICOM パイプラインをより安定させるための標準テンプレート機能。
-- [ ] **検証スクリプトの詳細化**: 匿名化後のデータの整合性をさらに深くチェックする機能（線量グリッドの整合性など）。
-- [ ] **配布パッケージ化**: `PyInstaller` 等を用いた単一実行ファイル（.exe）の生成検討。
 
-## 4. 直近で実行すべきコマンド
+- [ ] **検証スクリプトの詳細化**: 匿名化・テンプレート適用後のデータ整合性をさらに深く確認する（線量グリッド等）。
+- [ ] **配布パッケージ化**: `PyInstaller` 等を用いた単一実行ファイル（`.exe`）を検討する。
+- [ ] **一時ディレクトリの管理者削除**: `.pytest_cache` と `.test-tmp-*` はACLがSYSTEM/Administrators限定のため、現在の非昇格セッションでは削除不可。管理者PowerShellで対象パスを再確認してから削除する。
+
+## 4. 次回開始時の確認
+
 ```powershell
-# テストの実行
-python -m pytest tests/
-
-# チェッカーGUIの起動
-.\start_checker_gui.bat
+git switch main
+git pull origin main
+python -m pytest -p no:cacheprovider --basetemp C:\tmp\rt-dicom-toolkit-pytest-eod-20260810 tests/
 ```
 
+- この引継ぎ更新用PRがマージ済みなら、未マージ差分がないことを確認して作業ブランチを `git branch -d agent/end-of-day-20260810` で削除する。
+- `git branch -d` が失敗した場合は `-D` を使用せず、未マージ差分を確認して人間へ報告する。
+
 ## 5. 重要なコンテキスト
-- **OpenSpec**: `changes/003_uid_consistency.md` が ✅ APPROVED / MERGED 済み。
-- **Git運用**: 次のタスク開始時は必ず `git pull` から始め、新しいブランチを切ること。
-- **環境**: 日本語環境のため `$env:PYTHONUTF8=1` を常時使用。
+
+- **OpenSpec**: `changes/005_windows_offline_installation.md` は APPROVED / MERGED 済み。
+- **Git運用**: 次の開発作業は最新の `main` から小さな目的別ブランチを作成する。
+- **環境**: 日本語環境では必要に応じて `$env:PYTHONUTF8=1` を設定する。
