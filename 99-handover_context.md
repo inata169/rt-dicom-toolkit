@@ -14,7 +14,7 @@
 
 ## 2. 現在のステータス
 
-- **テスト**: `python -m pytest tests/` で17件すべてPASS。
+- **テスト**: `python -m pytest -p no:cacheprovider --basetemp C:\tmp\rt-dicom-toolkit-pytest-eod-20260810 tests/` で17件すべてPASS。
 - **配布ZIP**: `dist\rt-dicom-toolkit-offline-win64-1.0.0.zip`
 - **SHA-256**: `BB4912E2286ED60ED1ADE7AEE9A86B00F09B4BEEB5DBE3DF7D86AD71ECA8E642`
 - **Git除外**: `dist/`、wheel、Python本体、検証用一時ディレクトリはGitHubへpushしない設定。
@@ -31,7 +31,7 @@
 ```powershell
 git switch main
 git pull origin main
-python -m pytest tests/
+python -m pytest -p no:cacheprovider --basetemp C:\tmp\rt-dicom-toolkit-pytest-eod-20260810 tests/
 ```
 
 - この引継ぎ更新用PRがマージ済みなら、未マージ差分がないことを確認して作業ブランチを `git branch -d agent/end-of-day-20260810` で削除する。
