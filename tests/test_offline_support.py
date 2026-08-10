@@ -65,7 +65,11 @@ def test_offline_installer_forbids_package_index_access():
     assert "--force-reinstall" in lower
     assert 'call :select_python' in lower
     assert "import struct,sys,tkinter; raise systemexit" in lower
+    assert 'rmdir /s /q "%bundle_root%.venv"' in lower
+    assert "incompatible virtual environment could not be removed" in lower
     assert '"%base_python%" -m venv' in lower
+    assert 'set "pythonhome="' in lower
+    assert 'set "pythonpath="' in lower
     assert "http://" not in lower
     assert "https://" not in lower
     assert "invoke-webrequest" not in lower
@@ -88,6 +92,9 @@ def test_launchers_use_only_dedicated_virtual_environment():
     assert ".venv\\Scripts\\pythonw.exe" in launcher
     assert ".venv\\Scripts\\python.exe" in smoke_launcher
     assert " -m rt_dicom_toolkit" in launcher
+    for script in (launcher, smoke_launcher):
+        assert 'set "PYTHONHOME="' in script
+        assert 'set "PYTHONPATH="' in script
 
 
 def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
@@ -99,6 +106,9 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert "Python Software Foundation" in builder
     assert "import pip,setuptools,struct,sys,wheel" in builder
     assert "with pip, setuptools, and wheel is required" in builder
+    assert '"-m", "pip", "--isolated", "download"' in builder
+    assert '"--index-url", "https://pypi.org/simple"' in builder
+    assert '"--no-cache-dir"' in builder
     assert '"--only-binary=:all:"' in builder
     assert '"--no-deps"' in builder
     assert "SHA256SUMS.txt" in builder

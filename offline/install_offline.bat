@@ -14,6 +14,8 @@ set "TRUSTED_POWERSHELL=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.
 set "PIP_NO_INDEX=1"
 set "PIP_CONFIG_FILE=NUL"
 set "PIP_DISABLE_PIP_VERSION_CHECK=1"
+set "PYTHONHOME="
+set "PYTHONPATH="
 set "PYTHONUTF8=1"
 
 echo RT DICOM Toolkit offline installer
@@ -65,6 +67,18 @@ if not defined BASE_PYTHON (
 if not defined BASE_PYTHON (
   echo ERROR: CPython 3.12.10 x64 is unavailable after installation. 1>&2
   exit /b 1
+)
+
+if exist "%VENV_PYTHON%" (
+  "%VENV_PYTHON%" -c "import struct,sys,tkinter; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
+  if errorlevel 1 (
+    echo [3/6] Existing virtual environment is incompatible; recreating...
+    rmdir /s /q "%BUNDLE_ROOT%.venv"
+    if exist "%BUNDLE_ROOT%.venv" (
+      echo ERROR: Incompatible virtual environment could not be removed. 1>&2
+      exit /b 1
+    )
+  )
 )
 
 if not exist "%VENV_PYTHON%" (

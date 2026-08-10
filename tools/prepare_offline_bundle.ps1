@@ -144,8 +144,10 @@ try {
 
     Write-Host "Downloading pinned CPython 3.12 Windows x64 wheels..."
     Invoke-ProducerPython -Arguments @(
-        "-m", "pip", "download",
+        "-m", "pip", "--isolated", "download",
         "--disable-pip-version-check",
+        "--index-url", "https://pypi.org/simple",
+        "--no-cache-dir",
         "--dest", $Wheelhouse,
         "--only-binary=:all:",
         "--no-deps",
