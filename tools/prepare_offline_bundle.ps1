@@ -189,7 +189,15 @@ try {
         throw "Expected exactly one application wheel, found $($ApplicationWheels.Count)."
     }
 
-    Copy-RequiredFile (Join-Path $RepoRoot "offline\install_offline.bat") (Join-Path $BundleRoot "install_offline.bat")
+    $InstallerTemplatePath = Join-Path $RepoRoot "offline\install_offline.bat"
+    $InstallerDestination = Join-Path $BundleRoot "install_offline.bat"
+    $VersionToken = "__RTDT_PROJECT_VERSION__"
+    $InstallerText = [System.IO.File]::ReadAllText($InstallerTemplatePath)
+    if (($InstallerText.Split(@($VersionToken), [System.StringSplitOptions]::None).Count - 1) -ne 1) {
+        throw "Offline installer must contain exactly one project-version token."
+    }
+    $InstallerText = $InstallerText.Replace($VersionToken, $ProjectVersion)
+    [System.IO.File]::WriteAllText($InstallerDestination, $InstallerText, [System.Text.UTF8Encoding]::new($false))
     Copy-RequiredFile (Join-Path $RepoRoot "offline\start_rt_dicom_toolkit.bat") (Join-Path $BundleRoot "start_rt_dicom_toolkit.bat")
     Copy-RequiredFile (Join-Path $RepoRoot "offline\smoke_test.bat") (Join-Path $BundleRoot "smoke_test.bat")
     Copy-RequiredFile (Join-Path $RepoRoot "tools\offline_smoke_test.py") (Join-Path $BundleRoot "tools\offline_smoke_test.py")

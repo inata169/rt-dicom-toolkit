@@ -49,7 +49,7 @@ RT DICOM匿名化・検証ツールは、放射線治療（RT）に関連するD
 ### 1.2 システム要件
 
 - **オペレーティングシステム**：Windows 10以降、macOS 10.14以降、各種Linuxディストリビューション
-- **Python環境**：Python 3.6以上
+- **Python環境**：Python 3.10以上
 - **必要ライブラリ**：
   - pydicom （DICOMファイル操作）
   - pandas （データ分析）

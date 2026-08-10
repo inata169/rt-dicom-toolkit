@@ -11,6 +11,7 @@ set "VENV_PYTHON=%BUNDLE_ROOT%.venv\Scripts\python.exe"
 set "APP_DATA=%BUNDLE_ROOT%data"
 set "LEGACY_DATA=%BUNDLE_ROOT%.venv\Lib\site-packages\data"
 set "LEGACY_BACKUP=%BUNDLE_ROOT%data\legacy-venv-data"
+set "APPLICATION_VERSION=__RTDT_PROJECT_VERSION__"
 set "BASE_PYTHON="
 set "WHEELHOUSE=%BUNDLE_ROOT%wheelhouse"
 set "TRUSTED_POWERSHELL=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -99,7 +100,7 @@ if not exist "%VENV_PYTHON%" (
 )
 
 echo [4/6] Installing only from the bundled wheelhouse...
-"%VENV_PYTHON%" -m pip --isolated install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade --force-reinstall rt-dicom-toolkit==1.0.0
+"%VENV_PYTHON%" -m pip --isolated install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade --force-reinstall rt-dicom-toolkit==%APPLICATION_VERSION%
 if errorlevel 1 (
   echo ERROR: Offline wheel installation failed. 1>&2
   exit /b 1

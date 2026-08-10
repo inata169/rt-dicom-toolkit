@@ -17,12 +17,15 @@ def test_patient_dicom_ignore_rules_are_case_insensitive():
     assert "*.[Dd][Cc][Mm]" in ignore
     assert "*.[Dd][Ii][Cc][Oo][Mm]" in ignore
     assert "*.[Dd][Ii][Rr]" in ignore
+    assert "*.[Nn][Ii][Ii]" in ignore
+    assert "*.[Nn][Ii][Ii].[Gg][Zz]" in ignore
 
 
 def test_documented_python_minimum_matches_package_metadata():
-    readme = (ROOT / "docs" / "readme.md").read_text(encoding="utf-8")
-    assert "Python 3.10以上" in readme
-    assert "Python 3.6以上" not in readme
+    for relative_path in ("docs/readme.md", "docs/user_manual.md", "readmemd.md"):
+        readme = (ROOT / relative_path).read_text(encoding="utf-8")
+        assert "Python 3.10" in readme
+        assert "Python 3.6" not in readme
 
 
 def test_offline_lock_is_complete_and_exact():
@@ -67,6 +70,9 @@ def test_offline_installer_forbids_package_index_access():
     assert "--only-binary=:all:" in lower
     assert "--force-reinstall" in lower
     assert "pip --isolated install" in lower
+    assert "rt-dicom-toolkit==%application_version%" in lower
+    assert "rt-dicom-toolkit==1.0.0" not in lower
+    assert "__rtdt_project_version__" in lower
     assert 'call :select_python' in lower
     assert "import struct,sys,tkinter; raise systemexit" in lower
     assert 'rmdir /s /q "%bundle_root%.venv"' in lower
@@ -137,6 +143,8 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert '"-m", "pip", "--isolated", "download"' in builder
     assert '"--index-url", "https://pypi.org/simple"' in builder
     assert '"--no-cache-dir"' in builder
+    assert ".Replace($VersionToken, $ProjectVersion)" in builder
+    assert "exactly one project-version token" in builder
     assert '"--only-binary=:all:"' in builder
     assert '"--no-deps"' in builder
     assert "SHA256SUMS.txt" in builder
