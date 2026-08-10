@@ -7,7 +7,6 @@ __pycache__/
 env/
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -23,6 +22,8 @@ var/
 # 仮想環境
 venv/
 ENV/
+.venv/
+.runtime/
 
 # データディレクトリ
 data/input_dicom/
@@ -33,10 +34,26 @@ data/validation_reports/
 # ビルド関連
 *.spec
 build/
-dist/
 
-# 特定のDICOMファイル
-*.dcm
+# オフライン配布物・第三者ライセンスの再配布物
+# Python本体、PyPI wheel、生成ZIPはリポジトリへコミットしない
+/dist/
+/wheelhouse/
+/python/
+*.whl
+python-*-amd64.exe
+/.offline-install-validation-*/
+/.test-tmp-*/
+
+# DICOMデータ・派生ログ（患者由来データを含む可能性があるためコミット禁止）
+[Dd][Ii][Cc][Oo][Mm]/
+[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/
+*.[Dd][Cc][Mm]
+*.[Dd][Ii][Cc][Oo][Mm]
+*.[Dd][Ii][Rr]
+[Dd][Ii][Cc][Oo][Mm][Dd][Ii][Rr]
+*.[Nn][Ii][Ii]
+*.[Nn][Ii][Ii].[Gg][Zz]
 
 # IDE設定
 .idea/

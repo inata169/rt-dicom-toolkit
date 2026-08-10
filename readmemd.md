@@ -66,7 +66,7 @@ RT_DICOM_TOOLKIT/
 
 ### 必要条件
 
-- Python 3.6以上
+- Python 3.10以上
 - 依存パッケージ: pydicom, numpy, matplotlib, pandas
 
 ### インストール手順

@@ -1,0 +1,175 @@
+@echo off
+setlocal EnableExtensions DisableDelayedExpansion
+chcp 65001 >nul 2>&1
+cd /d "%~dp0"
+
+set "BUNDLE_ROOT=%~dp0"
+set "RTDT_BUNDLE_ROOT=%~dp0"
+set "PYTHON_INSTALLER=%BUNDLE_ROOT%python\python-3.12.10-amd64.exe"
+set "PRIVATE_PYTHON=%BUNDLE_ROOT%.runtime\python.exe"
+set "VENV_PYTHON=%BUNDLE_ROOT%.venv\Scripts\python.exe"
+set "APP_DATA=%BUNDLE_ROOT%data"
+set "LEGACY_DATA=%BUNDLE_ROOT%.venv\Lib\site-packages\data"
+set "LEGACY_BACKUP=%BUNDLE_ROOT%data\legacy-venv-data"
+set "APPLICATION_VERSION=__RTDT_PROJECT_VERSION__"
+set "BASE_PYTHON="
+set "WHEELHOUSE=%BUNDLE_ROOT%wheelhouse"
+set "TRUSTED_POWERSHELL=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+set "PIP_NO_INDEX=1"
+set "PIP_CONFIG_FILE=nul"
+set "PIP_DISABLE_PIP_VERSION_CHECK=1"
+set "PYTHONHOME="
+set "PYTHONPATH="
+set "RTDT_DATA_ROOT=%BUNDLE_ROOT%data"
+set "PYTHONUTF8=1"
+
+echo RT DICOM Toolkit offline installer
+echo.
+echo This folder must be copied from USB to a writable local-disk folder.
+echo No internet connection is used by this installer.
+echo.
+
+if not exist "%BUNDLE_ROOT%SHA256SUMS.txt" (
+  echo ERROR: SHA256SUMS.txt is missing. 1>&2
+  exit /b 1
+)
+if not exist "%TRUSTED_POWERSHELL%" (
+  echo ERROR: Windows PowerShell was not found in the system directory. 1>&2
+  exit /b 1
+)
+
+echo [1/6] Verifying bundle SHA-256 checksums...
+"%TRUSTED_POWERSHELL%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
+  "$ErrorActionPreference='Stop';$root=[IO.Path]::GetFullPath($env:RTDT_BUNDLE_ROOT);$prefix=$root.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar;$inventory=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase);$lines=Get-Content -LiteralPath (Join-Path $root 'SHA256SUMS.txt') -Encoding UTF8;foreach($line in $lines){if([string]::IsNullOrWhiteSpace($line)){continue};if($line -notmatch '^([0-9a-f]{64}) \*(.+)$'){throw ('Invalid checksum line: '+$line)};$expected=$matches[1];$relative=$matches[2].Replace('/',[IO.Path]::DirectorySeparatorChar);if([IO.Path]::IsPathRooted($relative)-or $relative.Contains(':')){throw ('Unsafe checksum path: '+$relative)};$full=[IO.Path]::GetFullPath((Join-Path $root $relative));if(-not $full.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){throw ('Checksum path escapes bundle: '+$relative)};$key=$full.Substring($prefix.Length).Replace([IO.Path]::DirectorySeparatorChar,'/');if(-not $inventory.Add($key)){throw ('Duplicate checksum path: '+$key)};if(-not [IO.File]::Exists($full)){throw ('Missing bundle file: '+$key)};$actualHash=(Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant();if($actualHash -ne $expected){throw ('SHA-256 mismatch: '+$key)}};if($inventory.Count -eq 0){throw 'Checksum inventory is empty'};$payload=@(Get-ChildItem -LiteralPath $root -Force|Where-Object{$_.Name -notin @('.venv','.runtime','data','SHA256SUMS.txt')}|ForEach-Object{if($_.PSIsContainer){Get-ChildItem -LiteralPath $_.FullName -Recurse -Force -File}else{$_}});foreach($file in $payload){$key=$file.FullName.Substring($prefix.Length).Replace([IO.Path]::DirectorySeparatorChar,'/');if(-not $inventory.Contains($key)){throw ('Unexpected bundle file: '+$key)}};if($payload.Count -ne $inventory.Count){throw ('Bundle inventory count mismatch: expected '+$inventory.Count+', found '+$payload.Count)};Write-Host ('Verified '+$inventory.Count+' files and rejected unlisted payloads.')"
+if errorlevel 1 (
+  echo ERROR: Bundle verification failed. 1>&2
+  exit /b 1
+)
+
+if not exist "%PYTHON_INSTALLER%" (
+  echo ERROR: Bundled Python installer is missing. 1>&2
+  exit /b 1
+)
+
+call :select_python "%PRIVATE_PYTHON%"
+call :select_python "%LocalAppData%\Programs\Python\Python312\python.exe"
+call :select_python "%ProgramFiles%\Python312\python.exe"
+
+if not defined BASE_PYTHON (
+  echo [2/6] Installing bundled CPython 3.12.10 runtime...
+  "%PYTHON_INSTALLER%" /quiet InstallAllUsers=0 TargetDir="%BUNDLE_ROOT%.runtime" Include_launcher=0 Include_test=0 Include_doc=0 Shortcuts=0 AssociateFiles=0 PrependPath=0 Include_tcltk=1 Include_pip=1
+  if errorlevel 1 (
+    echo ERROR: Bundled Python installation failed. 1>&2
+    exit /b 1
+  )
+  call :select_python "%PRIVATE_PYTHON%"
+  call :select_python "%LocalAppData%\Programs\Python\Python312\python.exe"
+  call :select_python "%ProgramFiles%\Python312\python.exe"
+) else (
+  echo [2/6] Using compatible CPython 3.12.10 x64: %BASE_PYTHON%
+)
+
+if not defined BASE_PYTHON (
+  echo ERROR: CPython 3.12.10 x64 is unavailable after installation. 1>&2
+  exit /b 1
+)
+
+call :preserve_legacy_data
+if errorlevel 1 exit /b 1
+
+if exist "%BUNDLE_ROOT%.venv\" if not exist "%VENV_PYTHON%" (
+  echo [3/6] Existing virtual environment is incomplete; recreating...
+  rmdir /s /q "%BUNDLE_ROOT%.venv"
+  if exist "%BUNDLE_ROOT%.venv" (
+    echo ERROR: Incomplete virtual environment could not be removed. 1>&2
+    exit /b 1
+  )
+)
+
+if exist "%VENV_PYTHON%" (
+  call :python_is_compatible "%VENV_PYTHON%"
+  if errorlevel 1 (
+    echo [3/6] Existing virtual environment is incompatible; recreating...
+    rmdir /s /q "%BUNDLE_ROOT%.venv"
+    if exist "%BUNDLE_ROOT%.venv" (
+      echo ERROR: Incompatible virtual environment could not be removed. 1>&2
+      exit /b 1
+    )
+  )
+)
+
+if not exist "%VENV_PYTHON%" (
+  echo [3/6] Creating dedicated virtual environment...
+  "%BASE_PYTHON%" -m venv "%BUNDLE_ROOT%.venv"
+  if errorlevel 1 (
+    echo ERROR: Virtual environment creation failed. 1>&2
+    exit /b 1
+  )
+) else (
+  echo [3/6] Dedicated virtual environment already exists.
+)
+
+echo [4/6] Installing only from the bundled wheelhouse...
+"%VENV_PYTHON%" -m pip --isolated install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade --force-reinstall rt-dicom-toolkit==%APPLICATION_VERSION%
+if errorlevel 1 (
+  echo ERROR: Offline wheel installation failed. 1>&2
+  exit /b 1
+)
+
+echo [5/6] Checking installed dependencies...
+"%VENV_PYTHON%" -m pip check
+if errorlevel 1 (
+  echo ERROR: pip check failed. 1>&2
+  exit /b 1
+)
+
+echo [6/6] Running synthetic-DICOM smoke test...
+call "%BUNDLE_ROOT%smoke_test.bat"
+if errorlevel 1 (
+  echo ERROR: Smoke test failed. 1>&2
+  exit /b 1
+)
+
+echo.
+echo Installation and smoke test completed successfully.
+echo Start the application with start_rt_dicom_toolkit.bat.
+exit /b 0
+
+:select_python
+if defined BASE_PYTHON exit /b 0
+if not exist "%~1" exit /b 0
+call :python_is_compatible "%~1"
+if not errorlevel 1 set "BASE_PYTHON=%~1"
+exit /b 0
+
+:python_is_compatible
+set "PYTHON_PROBE_RESULT="
+set "PYTHON_PROBE_FILE=%TEMP%\rtdt-python-probe-%RANDOM%-%RANDOM%.tmp"
+"%~1" -c "import struct,sys,tkinter; print('RTDT_COMPATIBLE' if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 'RTDT_INCOMPATIBLE')" >"%PYTHON_PROBE_FILE%" 2>nul
+if exist "%PYTHON_PROBE_FILE%" set /p PYTHON_PROBE_RESULT=<"%PYTHON_PROBE_FILE%"
+if exist "%PYTHON_PROBE_FILE%" del /q "%PYTHON_PROBE_FILE%" >nul 2>&1
+if "%PYTHON_PROBE_RESULT%"=="RTDT_COMPATIBLE" exit /b 0
+exit /b 1
+
+:preserve_legacy_data
+if not exist "%LEGACY_DATA%\" exit /b 0
+echo Preserving legacy application data outside the virtual environment...
+if not exist "%APP_DATA%\" (
+  move /y "%LEGACY_DATA%" "%APP_DATA%" >nul
+) else (
+  if exist "%LEGACY_BACKUP%\" (
+    echo ERROR: Both legacy data and its backup destination exist. 1>&2
+    echo Move "%LEGACY_DATA%" to a safe location, then rerun the installer. 1>&2
+    exit /b 1
+  )
+  move /y "%LEGACY_DATA%" "%LEGACY_BACKUP%" >nul
+)
+if errorlevel 1 (
+  echo ERROR: Legacy application data could not be preserved. 1>&2
+  exit /b 1
+)
+if exist "%LEGACY_DATA%\" (
+  echo ERROR: Legacy application data remains inside the virtual environment. 1>&2
+  exit /b 1
+)
+exit /b 0
