@@ -9,10 +9,11 @@ setup(
     version="1.0.0",
     packages=find_packages(),
     install_requires=[
-        "pydicom",
-        "numpy",
-        "matplotlib",
-        "pandas",
+        "pydicom>=2.4.4,<3.1",
+        "numpy>=1.26.4,<3",
+        "matplotlib>=3.10.3,<4",
+        "pandas>=2.3.1,<3",
+        "customtkinter>=5.2.2,<6",
     ],
     entry_points={
         'console_scripts': [
@@ -28,5 +29,5 @@ setup(
     author_email="example@example.com",
     description="放射線治療用DICOM匿名化・検証ツールキット",
     keywords="dicom, anonymization, radiation therapy, medical physics",
-    python_requires=">=3.6",
+    python_requires=">=3.10",
 )
