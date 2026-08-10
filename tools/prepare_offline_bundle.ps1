@@ -45,7 +45,7 @@ function Resolve-ProducerPython {
 
     foreach ($Candidate in $Candidates) {
         try {
-            $Probe = & $Candidate.Executable @($Candidate.Prefix) -c "import pip,setuptools,struct,sys,wheel; print('ok' if sys.version_info[:2] == (3,12) and struct.calcsize('P')*8 == 64 else 'unsupported')" 2>$null
+            $Probe = & $Candidate.Executable @($Candidate.Prefix) -I -c "import pip,setuptools,struct,sys,wheel; print('ok' if sys.version_info[:2] == (3,12) and struct.calcsize('P')*8 == 64 else 'unsupported')" 2>$null
         }
         catch {
             continue
@@ -67,14 +67,14 @@ function Invoke-ProducerPython {
     )
 
     if ($Capture) {
-        $Output = & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) @Arguments
+        $Output = & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) -I @Arguments
         if ($LASTEXITCODE -ne 0) {
             throw "Producer Python command failed with exit code $LASTEXITCODE."
         }
         return $Output
     }
 
-    & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) @Arguments
+    & $script:ProducerPython.Executable @($script:ProducerPython.Prefix) -I @Arguments
     if ($LASTEXITCODE -ne 0) {
         throw "Producer Python command failed with exit code $LASTEXITCODE."
     }

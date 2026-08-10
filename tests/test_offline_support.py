@@ -86,6 +86,11 @@ def test_offline_installer_forbids_package_index_access():
     assert 'set "pythonpath="' in lower
     assert 'set "rtdt_data_root=%bundle_root%data"' in lower
     assert "call :preserve_legacy_data" in lower
+    assert lower.index("call :preserve_legacy_data") < lower.index(
+        'if exist "%venv_python%"'
+    )
+    assert 'if exist "%bundle_root%.venv\\" if not exist "%venv_python%"' in lower
+    assert "incomplete virtual environment could not be removed" in lower
     assert 'move /y "%legacy_data%"' in lower
     assert "legacy application data remains inside" in lower
     assert "http://" not in lower
@@ -143,6 +148,8 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert "Get-AuthenticodeSignature" in builder
     assert "Python Software Foundation" in builder
     assert "import pip,setuptools,struct,sys,wheel" in builder
+    assert "@($Candidate.Prefix) -I -c" in builder
+    assert "@($script:ProducerPython.Prefix) -I @Arguments" in builder
     assert "with pip, setuptools, and wheel is required" in builder
     assert '"-m", "pip", "--isolated", "download"' in builder
     assert '"--index-url", "https://pypi.org/simple"' in builder

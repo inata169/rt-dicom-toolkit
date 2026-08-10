@@ -74,9 +74,19 @@ if not defined BASE_PYTHON (
   exit /b 1
 )
 
+call :preserve_legacy_data
+if errorlevel 1 exit /b 1
+
+if exist "%BUNDLE_ROOT%.venv\" if not exist "%VENV_PYTHON%" (
+  echo [3/6] Existing virtual environment is incomplete; recreating...
+  rmdir /s /q "%BUNDLE_ROOT%.venv"
+  if exist "%BUNDLE_ROOT%.venv" (
+    echo ERROR: Incomplete virtual environment could not be removed. 1>&2
+    exit /b 1
+  )
+)
+
 if exist "%VENV_PYTHON%" (
-  call :preserve_legacy_data
-  if errorlevel 1 exit /b 1
   call :python_is_compatible "%VENV_PYTHON%"
   if errorlevel 1 (
     echo [3/6] Existing virtual environment is incompatible; recreating...
