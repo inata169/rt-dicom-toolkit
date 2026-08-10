@@ -11,5 +11,6 @@
 - [x] DICOM匿名化チェッカー (CLI & GUI) の実装 (OpenSpec: 002)
 - [x] 内部UID参照の一貫性保持機能の実装 (OpenSpec: 003)
 - [x] Universal DICOM Template の実装 (OpenSpec: 004)
+- [x] Windows 10向けオフライン導入一式の実装・検証 (OpenSpec: 005 / PR #16)
 - [ ] 検証スクリプトの詳細化
 - [ ] PyInstallerによる実行ファイル化の検討
