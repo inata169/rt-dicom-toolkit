@@ -143,20 +143,27 @@ try {
     Write-Host "Python installer signature: Valid"
 
     Write-Host "Downloading pinned CPython 3.12 Windows x64 wheels..."
-    Invoke-ProducerPython -Arguments @(
-        "-m", "pip", "--isolated", "download",
-        "--disable-pip-version-check",
-        "--index-url", "https://pypi.org/simple",
-        "--no-cache-dir",
-        "--dest", $Wheelhouse,
-        "--only-binary=:all:",
-        "--no-deps",
-        "--platform", "win_amd64",
-        "--python-version", "3.12",
-        "--implementation", "cp",
-        "--abi", "cp312",
-        "--requirement", $LockPath
-    )
+    $OldDownloadConfig = $env:PIP_CONFIG_FILE
+    try {
+        $env:PIP_CONFIG_FILE = "nul"
+        Invoke-ProducerPython -Arguments @(
+            "-m", "pip", "--isolated", "download",
+            "--disable-pip-version-check",
+            "--index-url", "https://pypi.org/simple",
+            "--no-cache-dir",
+            "--dest", $Wheelhouse,
+            "--only-binary=:all:",
+            "--no-deps",
+            "--platform", "win_amd64",
+            "--python-version", "3.12",
+            "--implementation", "cp",
+            "--abi", "cp312",
+            "--requirement", $LockPath
+        )
+    }
+    finally {
+        $env:PIP_CONFIG_FILE = $OldDownloadConfig
+    }
 
     $NonWheels = @(Get-ChildItem -LiteralPath $Wheelhouse -File | Where-Object { $_.Extension -ne ".whl" })
     if ($NonWheels.Count -ne 0) {

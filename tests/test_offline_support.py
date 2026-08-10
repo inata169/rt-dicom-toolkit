@@ -147,6 +147,8 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert '"-m", "pip", "--isolated", "download"' in builder
     assert '"--index-url", "https://pypi.org/simple"' in builder
     assert '"--no-cache-dir"' in builder
+    assert "$OldDownloadConfig = $env:PIP_CONFIG_FILE" in builder
+    assert "$env:PIP_CONFIG_FILE = $OldDownloadConfig" in builder
     assert ".Replace($VersionToken, $ProjectVersion)" in builder
     assert "exactly one project-version token" in builder
     assert '$env:PIP_CONFIG_FILE = "nul"' in builder
