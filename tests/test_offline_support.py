@@ -75,7 +75,10 @@ def test_offline_installer_forbids_package_index_access():
     assert "rt-dicom-toolkit==1.0.0" not in lower
     assert "__rtdt_project_version__" in lower
     assert 'call :select_python' in lower
-    assert "import struct,sys,tkinter; raise systemexit" in lower
+    assert 'call :python_is_compatible "%venv_python%"' in lower
+    assert 'call :python_is_compatible "%~1"' in lower
+    assert "import struct,sys,tkinter; print('rtdt_compatible'" in lower
+    assert 'if "%python_probe_result%"=="rtdt_compatible"' in lower
     assert 'rmdir /s /q "%bundle_root%.venv"' in lower
     assert "incompatible virtual environment could not be removed" in lower
     assert '"%base_python%" -m venv' in lower

@@ -77,7 +77,7 @@ if not defined BASE_PYTHON (
 if exist "%VENV_PYTHON%" (
   call :preserve_legacy_data
   if errorlevel 1 exit /b 1
-  "%VENV_PYTHON%" -c "import struct,sys,tkinter; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
+  call :python_is_compatible "%VENV_PYTHON%"
   if errorlevel 1 (
     echo [3/6] Existing virtual environment is incompatible; recreating...
     rmdir /s /q "%BUNDLE_ROOT%.venv"
@@ -128,9 +128,18 @@ exit /b 0
 :select_python
 if defined BASE_PYTHON exit /b 0
 if not exist "%~1" exit /b 0
-"%~1" -c "import struct,sys,tkinter; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
+call :python_is_compatible "%~1"
 if not errorlevel 1 set "BASE_PYTHON=%~1"
 exit /b 0
+
+:python_is_compatible
+set "PYTHON_PROBE_RESULT="
+set "PYTHON_PROBE_FILE=%TEMP%\rtdt-python-probe-%RANDOM%-%RANDOM%.tmp"
+"%~1" -c "import struct,sys,tkinter; print('RTDT_COMPATIBLE' if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 'RTDT_INCOMPATIBLE')" >"%PYTHON_PROBE_FILE%" 2>nul
+if exist "%PYTHON_PROBE_FILE%" set /p PYTHON_PROBE_RESULT=<"%PYTHON_PROBE_FILE%"
+if exist "%PYTHON_PROBE_FILE%" del /q "%PYTHON_PROBE_FILE%" >nul 2>&1
+if "%PYTHON_PROBE_RESULT%"=="RTDT_COMPATIBLE" exit /b 0
+exit /b 1
 
 :preserve_legacy_data
 if not exist "%LEGACY_DATA%\" exit /b 0
