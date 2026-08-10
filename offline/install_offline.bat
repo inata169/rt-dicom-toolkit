@@ -79,7 +79,7 @@ if not exist "%VENV_PYTHON%" (
 )
 
 echo [4/6] Installing only from the bundled wheelhouse...
-"%VENV_PYTHON%" -m pip install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade rt-dicom-toolkit==1.0.0
+"%VENV_PYTHON%" -m pip install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade --force-reinstall rt-dicom-toolkit==1.0.0
 if errorlevel 1 (
   echo ERROR: Offline wheel installation failed. 1>&2
   exit /b 1

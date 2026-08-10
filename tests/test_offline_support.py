@@ -62,6 +62,7 @@ def test_offline_installer_forbids_package_index_access():
     assert "--no-index" in lower
     assert "--find-links" in lower
     assert "--only-binary=:all:" in lower
+    assert "--force-reinstall" in lower
     assert 'call :select_python' in lower
     assert "import struct,sys,tkinter; raise systemexit" in lower
     assert '"%base_python%" -m venv' in lower
