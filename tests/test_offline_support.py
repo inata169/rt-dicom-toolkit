@@ -1,4 +1,5 @@
 from pathlib import Path
+import importlib
 import re
 
 from tools.offline_smoke_test import run_smoke_test
@@ -9,8 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_patient_dicom_ignore_rules_are_case_insensitive():
     ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
-    assert "/[Dd][Ii][Cc][Oo][Mm]/" in ignore
-    assert "/[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/" in ignore
+    assert "[Dd][Ii][Cc][Oo][Mm]/" in ignore
+    assert "[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/" in ignore
+    assert "/[Dd][Ii][Cc][Oo][Mm]/" not in ignore
+    assert "/[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/" not in ignore
     assert "*.[Dd][Cc][Mm]" in ignore
     assert "*.[Dd][Ii][Cc][Oo][Mm]" in ignore
     assert "*.[Dd][Ii][Rr]" in ignore
@@ -63,6 +66,7 @@ def test_offline_installer_forbids_package_index_access():
     assert "--find-links" in lower
     assert "--only-binary=:all:" in lower
     assert "--force-reinstall" in lower
+    assert "pip --isolated install" in lower
     assert 'call :select_python' in lower
     assert "import struct,sys,tkinter; raise systemexit" in lower
     assert 'rmdir /s /q "%bundle_root%.venv"' in lower
@@ -70,6 +74,10 @@ def test_offline_installer_forbids_package_index_access():
     assert '"%base_python%" -m venv' in lower
     assert 'set "pythonhome="' in lower
     assert 'set "pythonpath="' in lower
+    assert 'set "rtdt_data_root=%bundle_root%data"' in lower
+    assert "call :preserve_legacy_data" in lower
+    assert 'move /y "%legacy_data%"' in lower
+    assert "legacy application data remains inside" in lower
     assert "http://" not in lower
     assert "https://" not in lower
     assert "invoke-webrequest" not in lower
@@ -78,7 +86,7 @@ def test_offline_installer_forbids_package_index_access():
     assert "hashset[string]" in lower
     assert "unexpected bundle file" in lower
     assert "bundle inventory count mismatch" in lower
-    assert "'.venv','.runtime','sha256sums.txt'" in lower
+    assert "'.venv','.runtime','data','sha256sums.txt'" in lower
     assert "^|" not in installer
 
 
@@ -95,6 +103,26 @@ def test_launchers_use_only_dedicated_virtual_environment():
     for script in (launcher, smoke_launcher):
         assert 'set "PYTHONHOME="' in script
         assert 'set "PYTHONPATH="' in script
+        assert 'set "RTDT_DATA_ROOT=%~dp0data"' in script
+
+
+def test_application_data_root_can_be_kept_outside_the_environment(
+    monkeypatch, tmp_path
+):
+    import rt_dicom_toolkit.config as config
+
+    data_root = tmp_path / "persistent-data"
+    monkeypatch.setenv("RTDT_DATA_ROOT", str(data_root))
+    try:
+        importlib.reload(config)
+        assert config.DATA_DIR == data_root.absolute()
+        assert config.DEFAULT_INPUT_DIR.is_dir()
+        assert config.DEFAULT_ANONYMOUS_DIR.is_dir()
+        assert config.DEFAULT_LOG_DIR.is_dir()
+        assert config.DEFAULT_REPORT_DIR.is_dir()
+    finally:
+        monkeypatch.delenv("RTDT_DATA_ROOT", raising=False)
+        importlib.reload(config)
 
 
 def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():

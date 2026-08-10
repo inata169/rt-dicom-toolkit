@@ -9,7 +9,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent.parent.absolute()
 
 # デフォルトのデータディレクトリ
-DATA_DIR = BASE_DIR / 'data'
+DATA_DIR = Path(os.environ.get('RTDT_DATA_ROOT', BASE_DIR / 'data')).expanduser().absolute()
 
 # デフォルトの入出力ディレクトリ
 DEFAULT_INPUT_DIR = DATA_DIR / 'input_dicom'

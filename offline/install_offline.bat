@@ -8,6 +8,9 @@ set "RTDT_BUNDLE_ROOT=%~dp0"
 set "PYTHON_INSTALLER=%BUNDLE_ROOT%python\python-3.12.10-amd64.exe"
 set "PRIVATE_PYTHON=%BUNDLE_ROOT%.runtime\python.exe"
 set "VENV_PYTHON=%BUNDLE_ROOT%.venv\Scripts\python.exe"
+set "APP_DATA=%BUNDLE_ROOT%data"
+set "LEGACY_DATA=%BUNDLE_ROOT%.venv\Lib\site-packages\data"
+set "LEGACY_BACKUP=%BUNDLE_ROOT%data\legacy-venv-data"
 set "BASE_PYTHON="
 set "WHEELHOUSE=%BUNDLE_ROOT%wheelhouse"
 set "TRUSTED_POWERSHELL=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -16,6 +19,7 @@ set "PIP_CONFIG_FILE=NUL"
 set "PIP_DISABLE_PIP_VERSION_CHECK=1"
 set "PYTHONHOME="
 set "PYTHONPATH="
+set "RTDT_DATA_ROOT=%BUNDLE_ROOT%data"
 set "PYTHONUTF8=1"
 
 echo RT DICOM Toolkit offline installer
@@ -35,7 +39,7 @@ if not exist "%TRUSTED_POWERSHELL%" (
 
 echo [1/6] Verifying bundle SHA-256 checksums...
 "%TRUSTED_POWERSHELL%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
-  "$ErrorActionPreference='Stop';$root=[IO.Path]::GetFullPath($env:RTDT_BUNDLE_ROOT);$prefix=$root.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar;$inventory=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase);$lines=Get-Content -LiteralPath (Join-Path $root 'SHA256SUMS.txt') -Encoding UTF8;foreach($line in $lines){if([string]::IsNullOrWhiteSpace($line)){continue};if($line -notmatch '^([0-9a-f]{64}) \*(.+)$'){throw ('Invalid checksum line: '+$line)};$expected=$matches[1];$relative=$matches[2].Replace('/',[IO.Path]::DirectorySeparatorChar);if([IO.Path]::IsPathRooted($relative)-or $relative.Contains(':')){throw ('Unsafe checksum path: '+$relative)};$full=[IO.Path]::GetFullPath((Join-Path $root $relative));if(-not $full.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){throw ('Checksum path escapes bundle: '+$relative)};$key=$full.Substring($prefix.Length).Replace([IO.Path]::DirectorySeparatorChar,'/');if(-not $inventory.Add($key)){throw ('Duplicate checksum path: '+$key)};if(-not [IO.File]::Exists($full)){throw ('Missing bundle file: '+$key)};$actualHash=(Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant();if($actualHash -ne $expected){throw ('SHA-256 mismatch: '+$key)}};if($inventory.Count -eq 0){throw 'Checksum inventory is empty'};$payload=@(Get-ChildItem -LiteralPath $root -Force|Where-Object{$_.Name -notin @('.venv','.runtime','SHA256SUMS.txt')}|ForEach-Object{if($_.PSIsContainer){Get-ChildItem -LiteralPath $_.FullName -Recurse -Force -File}else{$_}});foreach($file in $payload){$key=$file.FullName.Substring($prefix.Length).Replace([IO.Path]::DirectorySeparatorChar,'/');if(-not $inventory.Contains($key)){throw ('Unexpected bundle file: '+$key)}};if($payload.Count -ne $inventory.Count){throw ('Bundle inventory count mismatch: expected '+$inventory.Count+', found '+$payload.Count)};Write-Host ('Verified '+$inventory.Count+' files and rejected unlisted payloads.')"
+  "$ErrorActionPreference='Stop';$root=[IO.Path]::GetFullPath($env:RTDT_BUNDLE_ROOT);$prefix=$root.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar;$inventory=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase);$lines=Get-Content -LiteralPath (Join-Path $root 'SHA256SUMS.txt') -Encoding UTF8;foreach($line in $lines){if([string]::IsNullOrWhiteSpace($line)){continue};if($line -notmatch '^([0-9a-f]{64}) \*(.+)$'){throw ('Invalid checksum line: '+$line)};$expected=$matches[1];$relative=$matches[2].Replace('/',[IO.Path]::DirectorySeparatorChar);if([IO.Path]::IsPathRooted($relative)-or $relative.Contains(':')){throw ('Unsafe checksum path: '+$relative)};$full=[IO.Path]::GetFullPath((Join-Path $root $relative));if(-not $full.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){throw ('Checksum path escapes bundle: '+$relative)};$key=$full.Substring($prefix.Length).Replace([IO.Path]::DirectorySeparatorChar,'/');if(-not $inventory.Add($key)){throw ('Duplicate checksum path: '+$key)};if(-not [IO.File]::Exists($full)){throw ('Missing bundle file: '+$key)};$actualHash=(Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant();if($actualHash -ne $expected){throw ('SHA-256 mismatch: '+$key)}};if($inventory.Count -eq 0){throw 'Checksum inventory is empty'};$payload=@(Get-ChildItem -LiteralPath $root -Force|Where-Object{$_.Name -notin @('.venv','.runtime','data','SHA256SUMS.txt')}|ForEach-Object{if($_.PSIsContainer){Get-ChildItem -LiteralPath $_.FullName -Recurse -Force -File}else{$_}});foreach($file in $payload){$key=$file.FullName.Substring($prefix.Length).Replace([IO.Path]::DirectorySeparatorChar,'/');if(-not $inventory.Contains($key)){throw ('Unexpected bundle file: '+$key)}};if($payload.Count -ne $inventory.Count){throw ('Bundle inventory count mismatch: expected '+$inventory.Count+', found '+$payload.Count)};Write-Host ('Verified '+$inventory.Count+' files and rejected unlisted payloads.')"
 if errorlevel 1 (
   echo ERROR: Bundle verification failed. 1>&2
   exit /b 1
@@ -70,6 +74,8 @@ if not defined BASE_PYTHON (
 )
 
 if exist "%VENV_PYTHON%" (
+  call :preserve_legacy_data
+  if errorlevel 1 exit /b 1
   "%VENV_PYTHON%" -c "import struct,sys,tkinter; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
   if errorlevel 1 (
     echo [3/6] Existing virtual environment is incompatible; recreating...
@@ -93,7 +99,7 @@ if not exist "%VENV_PYTHON%" (
 )
 
 echo [4/6] Installing only from the bundled wheelhouse...
-"%VENV_PYTHON%" -m pip install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade --force-reinstall rt-dicom-toolkit==1.0.0
+"%VENV_PYTHON%" -m pip --isolated install --no-index --find-links "%WHEELHOUSE%" --only-binary=:all: --upgrade --force-reinstall rt-dicom-toolkit==1.0.0
 if errorlevel 1 (
   echo ERROR: Offline wheel installation failed. 1>&2
   exit /b 1
@@ -123,4 +129,27 @@ if defined BASE_PYTHON exit /b 0
 if not exist "%~1" exit /b 0
 "%~1" -c "import struct,sys,tkinter; raise SystemExit(0 if sys.version_info[:3] == (3,12,10) and struct.calcsize('P')*8 == 64 else 1)" >nul 2>&1
 if not errorlevel 1 set "BASE_PYTHON=%~1"
+exit /b 0
+
+:preserve_legacy_data
+if not exist "%LEGACY_DATA%\" exit /b 0
+echo Preserving legacy application data outside the virtual environment...
+if not exist "%APP_DATA%\" (
+  move /y "%LEGACY_DATA%" "%APP_DATA%" >nul
+) else (
+  if exist "%LEGACY_BACKUP%\" (
+    echo ERROR: Both legacy data and its backup destination exist. 1>&2
+    echo Move "%LEGACY_DATA%" to a safe location, then rerun the installer. 1>&2
+    exit /b 1
+  )
+  move /y "%LEGACY_DATA%" "%LEGACY_BACKUP%" >nul
+)
+if errorlevel 1 (
+  echo ERROR: Legacy application data could not be preserved. 1>&2
+  exit /b 1
+)
+if exist "%LEGACY_DATA%\" (
+  echo ERROR: Legacy application data remains inside the virtual environment. 1>&2
+  exit /b 1
+)
 exit /b 0

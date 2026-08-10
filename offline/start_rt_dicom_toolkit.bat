@@ -4,6 +4,7 @@ chcp 65001 >nul 2>&1
 cd /d "%~dp0"
 set "PYTHONHOME="
 set "PYTHONPATH="
+set "RTDT_DATA_ROOT=%~dp0data"
 set "PYTHONUTF8=1"
 
 if not exist "%~dp0.venv\Scripts\pythonw.exe" (

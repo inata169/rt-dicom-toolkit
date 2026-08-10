@@ -46,8 +46,8 @@ python-*-amd64.exe
 /.test-tmp-*/
 
 # DICOMデータ・派生ログ（患者由来データを含む可能性があるためコミット禁止）
-/[Dd][Ii][Cc][Oo][Mm]/
-/[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/
+[Dd][Ii][Cc][Oo][Mm]/
+[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/
 *.[Dd][Cc][Mm]
 *.[Dd][Ii][Cc][Oo][Mm]
 *.[Dd][Ii][Rr]
