@@ -54,6 +54,10 @@ def test_offline_installer_forbids_package_index_access():
     assert "invoke-webrequest" not in lower
     assert "curl" not in lower
     assert "%systemroot%\\system32\\windowspowershell\\v1.0\\powershell.exe" in lower
+    assert "hashset[string]" in lower
+    assert "unexpected bundle file" in lower
+    assert "bundle inventory count mismatch" in lower
+    assert "'.venv','.runtime','sha256sums.txt'" in lower
     assert "^|" not in installer
 
 
@@ -76,6 +80,8 @@ def test_bundle_builder_checks_official_python_signature_and_uses_wheels_only():
     assert "https://www.python.org/ftp/python/" in builder
     assert "Get-AuthenticodeSignature" in builder
     assert "Python Software Foundation" in builder
+    assert "import pip,setuptools,struct,sys,wheel" in builder
+    assert "with pip, setuptools, and wheel is required" in builder
     assert '"--only-binary=:all:"' in builder
     assert '"--no-deps"' in builder
     assert "SHA256SUMS.txt" in builder

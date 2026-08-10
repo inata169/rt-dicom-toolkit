@@ -22,6 +22,12 @@ USB ストレージ経由で導入するためのものです。患者由来DICO
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\prepare_offline_bundle.ps1
 ```
 
+作成用Pythonには `pip`、`setuptools`、`wheel` が必要です。不足している場合は、オンラインPCで次を実行してから再試行します。
+
+```powershell
+python -m pip install --upgrade pip setuptools wheel
+```
+
 同名ZIPを意図的に置換する場合だけ、`-Force`を追加します。
 
 ```powershell
@@ -66,8 +72,8 @@ Get-FileHash .\rt-dicom-toolkit-offline-win64-1.0.0.zip -Algorithm SHA256
 
 ## 3. オフラインPCへインストールする
 
-1. USB内のZIPを、書込み可能なローカルディスク上のフォルダへコピーします。
-2. ZIPを展開します。USB上で直接インストールしないでください。
+1. USB内のZIPを、書込み可能なローカルディスク上の空のフォルダへコピーします。
+2. ZIPをその空のフォルダへ展開します。USB上で直接インストールしないでください。
 3. 展開先の`install_offline.bat`をダブルクリックします。
 
 管理者権限は通常不要です。インストーラは次の順に処理します。

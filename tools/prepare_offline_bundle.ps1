@@ -45,7 +45,7 @@ function Resolve-ProducerPython {
 
     foreach ($Candidate in $Candidates) {
         try {
-            $Probe = & $Candidate.Executable @($Candidate.Prefix) -c "import struct,sys; print('ok' if sys.version_info[:2] == (3,12) and struct.calcsize('P')*8 == 64 else 'unsupported')" 2>$null
+            $Probe = & $Candidate.Executable @($Candidate.Prefix) -c "import pip,setuptools,struct,sys,wheel; print('ok' if sys.version_info[:2] == (3,12) and struct.calcsize('P')*8 == 64 else 'unsupported')" 2>$null
         }
         catch {
             continue
@@ -54,7 +54,7 @@ function Resolve-ProducerPython {
             return $Candidate
         }
     }
-    throw "CPython 3.12 x64 with pip is required to prepare the bundle."
+    throw "CPython 3.12 x64 with pip, setuptools, and wheel is required to prepare the bundle."
 }
 
 function Invoke-ProducerPython {
