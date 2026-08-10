@@ -31,7 +31,7 @@
 
 ### 必要条件
 
-- Python 3.6以上
+- Python 3.10以上
 - 依存パッケージ: pydicom, numpy, matplotlib, pandas
 
 ### インストール手順
@@ -95,7 +95,7 @@ RT DICOM匿名化・検証ツールは、放射線治療に関連するDICOMフ�
 ### 1.1 システム要件
 
 - **オペレーティングシステム**：Windows 10以降、macOS 10.14以降、各種Linuxディストリビューション
-- **Python環境**：Python 3.6以上
+- **Python環境**：Python 3.10以上
 - **必要ライブラリ**：pydicom, pandas, matplotlib, numpy
 
 ### 1.2 インストール方法

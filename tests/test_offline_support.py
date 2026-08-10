@@ -12,7 +12,14 @@ def test_patient_dicom_ignore_rules_are_case_insensitive():
     assert "/[Dd][Ii][Cc][Oo][Mm]/" in ignore
     assert "/[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/" in ignore
     assert "*.[Dd][Cc][Mm]" in ignore
+    assert "*.[Dd][Ii][Cc][Oo][Mm]" in ignore
     assert "*.[Dd][Ii][Rr]" in ignore
+
+
+def test_documented_python_minimum_matches_package_metadata():
+    readme = (ROOT / "docs" / "readme.md").read_text(encoding="utf-8")
+    assert "Python 3.10以上" in readme
+    assert "Python 3.6以上" not in readme
 
 
 def test_offline_lock_is_complete_and_exact():

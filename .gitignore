@@ -49,6 +49,7 @@ python-*-amd64.exe
 /[Dd][Ii][Cc][Oo][Mm]/
 /[Dd][Ii][Cc][Oo][Mm]_[Ll][Oo][Gg][Ss]/
 *.[Dd][Cc][Mm]
+*.[Dd][Ii][Cc][Oo][Mm]
 *.[Dd][Ii][Rr]
 
 # IDE設定
