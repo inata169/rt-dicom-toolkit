@@ -50,11 +50,22 @@
 
 ## Human-observed validation
 
-A human installed the `v0.0.0` offline bundle on the Windows 11 computer,
-started the RT DICOM Anonymizer, and completed an anonymization run. The GUI
-reported `Processing complete` and wrote the selected output, text log, and JSON
-summary to a user-selected external output directory.
+A human completed `install_offline.bat` for the `v0.0.0` bundle on the Windows
+11 computer and launched the RT DICOM Anonymizer GUI. The installer reports
+success only after running the bundled
+[`offline_smoke_test.py`](../tools/offline_smoke_test.py), which creates a
+minimal project-authored synthetic CT DICOM at runtime, exercises anonymization,
+validation, and template synchronization, and removes the synthetic files at
+completion.
 
-This confirms the bundle installation, application launch, and anonymizer
-workflow on that Windows 11 x64 computer. It does not record a disconnected
-network test, every toolkit GUI, or the newly documented removal procedure.
+The human also observed a separate anonymization run reporting
+`Processing complete` and producing output, a text log, and a JSON summary.
+Because the provenance of that separately selected input was not independently
+captured in this repository, the run is recorded only as a supplementary
+observation and is not used as formal DICOM-validation evidence. No input path,
+metadata, or DICOM content from that run is recorded here.
+
+The admissible evidence therefore confirms bundle installation, the bundled
+synthetic-DICOM smoke test, and application launch on that Windows 11 x64
+computer. It does not record a disconnected network test, every toolkit GUI, or
+the newly documented removal procedure.

@@ -120,7 +120,8 @@ To uninstall the offline toolkit:
 
 The installer does not add the toolkit to `PATH`, create shortcuts, or register
 file associations. Output directories selected outside the extracted bundle,
-such as `D:\DICOM_OUTPUT`, are not removed during uninstallation.
+such as a user-selected external output directory, are not removed during
+uninstallation.
 
 For checksum commands, reinstall instructions, troubleshooting, and the full
 offline procedure, see the
