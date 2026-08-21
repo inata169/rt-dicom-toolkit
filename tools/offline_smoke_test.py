@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import json
 from pathlib import Path
 import struct
 import tempfile
@@ -97,6 +98,22 @@ def run_smoke_test() -> None:
         anonymizer.private_tags = "remove"
         anonymizer.uid_handling = "consistent"
         anonymizer.process_directory()
+        summary_paths = list(log_dir.glob("rt_anonymization_summary_*.json"))
+        if len(summary_paths) != 1:
+            raise AssertionError("Anonymizer did not create exactly one summary file")
+        summary = json.loads(summary_paths[0].read_text(encoding="utf-8"))
+        expected_summary_keys = {
+            "start_time",
+            "processed_files",
+            "successful_files",
+            "skipped_files",
+            "error_files",
+            "file_details",
+            "patient_id_map",
+            "end_time",
+        }
+        if not expected_summary_keys.issubset(summary):
+            raise AssertionError("Anonymizer summary does not use the English output contract")
 
         anonymized_path = anonymized_dir / original_path.name
         if not anonymized_path.is_file():
@@ -127,6 +144,8 @@ def run_smoke_test() -> None:
         report = validator.validate_files(original_dir, anonymized_dir)
         if not report:
             raise AssertionError("Directory validation did not produce a report")
+        if "Anonymization Validation Summary" not in report:
+            raise AssertionError("Validation report heading is not English")
 
         template_path = root / "synthetic_template.dcm"
         _create_ct(

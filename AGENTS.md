@@ -1,41 +1,76 @@
-# AI Agents (Antigravity Protocol)
+# AI Contributor Entry Point
 
-このプロジェクトでは、AIエージェント（Antigravity）を用いて開発効率を最大化します。作業の性質に応じて、以下の2つのモード（エージェント役割）を使い分けます。
+Read `AI_AGENT_RULES.md` in full before inspecting or changing this repository.
+It is the provider-neutral safety, permission, and iteration policy for Codex,
+Claude Code, Antigravity, and other coding agents.
 
-## 1. Developer Agent (手)
-**推奨モデル:** Gemini Flash / Claude Sonnet 等の高速モデル
-**主な役割:**
-- 確定した仕様（OpenSpec）に基づく高速なコード実装
-- テストコード（pytest）の作成と実行
-- 単純なバグ修正、リファクタリング、Lintエラーの解消
-- コマンド（ファイル操作、Git操作）の迅速な実行
-**特徴:** Action Over Thought（考察よりも行動を優先）。エラーが出たら勝手に修正ループに入らず、状況を報告して人間に指示を仰ぐ。
+`rt-dicom-toolkit` supports radiotherapy DICOM anonymization, validation,
+template synchronization, and offline installation. Do not treat it as a
+guarantee of complete de-identification, legal compliance, clinical suitability,
+patient QA, or device or vendor certification. Follow, in order: the current
+human-approved task, approved OpenSpec changes, documented behavior and safety
+boundaries, and tests. Preserve evidence and report conflicts instead of
+guessing.
 
-## 2. Architect Agent (脳)
-**推奨モデル:** Gemini Pro / Claude Opus 等の高推論モデル
-**主な役割:**
-- アーキテクチャ設計、複雑な課題の解決策の立案
-- OpenSpec（変更提案・仕様書）の作成とレビュー
-- 難解なバグの根本原因分析
-- プロジェクト全体の方向性や技術選定に関する相談
-**特徴:** 実行よりも深い洞察と計画を優先。方向性が確定したら、Developer Agentに実装を引き継ぐ。
+## Starting work
 
----
+Confirm the repository root, branch, status, recent history, remote, and tags.
+Read only files relevant to the task, preserve unrelated user changes, and make
+the smallest diff on a feature branch. Do not commit or push directly to `main`.
 
-## エージェントとOpenSpecの連携ワークフロー
-1. **提案 (Architect/Developer):** 新機能や大きな変更を行う場合、エージェントは `changes/` に OpenSpec 形式で提案書を作成する。
-2. **レビュー (Human):** 人間が OpenSpec を確認し、ステータスを `✅ APPROVED` に変更する。
-3. **実装 (Developer):** 承認された OpenSpec に従い、Developer Agent がコードを実装・検証する。
-4. **報告 (Developer):** テストがすべてPASSしたことを人間に報告し、`gh pr create` でPRを作成してURLを渡す。
-5. **マージ (Human):** 人間がGitHub画面上で「Merge pull request」を押す。
-6. **同期 (Developer):** マージ完了の連絡を受けたら、`git checkout main` → `git pull origin main` → `git branch -d <作業ブランチ>` で後片付けする。
+Never add real-patient DICOM, UIDs, images, metadata, anonymized output,
+validation reports, logs, screenshots, or derivatives to the repository. Use
+synthetic data for development and CI. Do not discover, connect to, or execute
+against patient data or an external DICOM environment on an agent's initiative.
 
----
+When asking the primary user a question, state the evidence first, make one safe
+proposal, and make the question answerable with `yes` or `no`. Do not bundle
+independent decisions or permissions.
 
-## Codex運用ルール（追記）
+## OpenSpec and loops
 
-- 本リポジトリにおける **Codex は Developer Agent（手）として運用**する。基本方針は「既存仕様に従った迅速な実装・検証」であり、要件の再定義や大規模な設計判断が必要な場合は人間または Architect Agent に判断を委ねる。
-- 実行環境は **Ubuntu 24 / Windows のハイブリッド環境**を前提とする。手順・スクリプト・運用ドキュメントは、可能な限り両環境で再現可能な形（依存を明示、パス差異に配慮、OS固有コマンドを最小化）で記述する。
-- **低スペックPCでの運用可能性を常に優先**する。具体的には、重い常駐プロセス・過度な並列実行・不要な巨大依存の導入を避け、処理は小さく分割して段階実行できる形を推奨する。
-- **実患者由来のDICOMデータは絶対にコミットしない。** 実データ（画像本体、メタデータ、派生物、再識別可能な断片を含む）のGit管理を禁止し、検証には匿名化済みサンプルまたは合成データのみを使用する。
-- 開発は **小さなPR単位**で進める。1PR 1目的を原則とし、レビュー容易性・ロールバック容易性・リスク局所化を重視して、変更範囲を最小限に保つ。
+For a new capability or a change to public behavior, architecture, dependencies,
+or data-handling boundaries, create an OpenSpec from `changes/_template.md`
+before implementation and wait for a human to mark it `✅ APPROVED`. A bug fix
+that restores documented behavior and a documentation-only correction do not
+require a proposal.
+
+Use the inner loop only for safe failures caused by the current diff. Change,
+run focused validation, inspect the result and diff, and apply the smallest fix
+within the attempt and stopping limits in `AI_AGENT_RULES.md`. Return
+specification, DICOM meaning, anonymization boundaries, clinical decisions, real
+data, external execution, destructive operations, permission expansion, and
+scope changes to the outer human loop.
+
+Codex acts as the Developer Agent by default, implementing and validating small
+changes against approved requirements. Return requirement redefinition,
+complex design choices, and hard-to-isolate failures to a human or Architect
+Agent instead of expanding scope. Prefer reproducible Windows 10/11 and Ubuntu
+24 procedures and staged execution suitable for low-specification computers.
+
+## Stopping and handoff
+
+Stop expanding the work when the human-approved acceptance criteria are met and
+required checks pass. Only a concrete merge-blocking defect in the current diff
+justifies one minimal additional correction round on the same branch and pull
+request. Do not create another issue, branch, pull request, OpenSpec change, or
+automation for refactors, optional coverage, future work, or style suggestions
+unless a human requests it. An agent does not merge.
+
+Run focused checks followed by all applicable public checks:
+
+```text
+python -m compileall rt_dicom_toolkit
+python -m pytest -q -p no:cacheprovider tests
+python tools/offline_smoke_test.py
+git diff --check
+git diff --stat
+git status --short
+```
+
+For documentation-only changes, run at least `git diff --check`, reference
+checks, `git diff --stat`, and `git status --short`, and state why runtime tests
+were omitted. A completion report must list changed files, exact commands and
+results, unrun checks and reasons, unresolved items, and branch plus commit or
+pull-request identifiers when created. It must state whether runtime behavior,
+the public specification, DICOM meaning, or protected data changed.

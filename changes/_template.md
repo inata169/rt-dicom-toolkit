@@ -1,17 +1,30 @@
-# Proposal: [タイトル]
+# Proposal: [Verb-led title]
 
 - Status: ⏳ PENDING
-- Author: Antigravity
-- Date: 2026-04-28
+- Author: [Agent or human]
+- Date: YYYY-MM-DD
 
-## 1. 背景 / 目的
-[なぜこの変更が必要か]
+## 1. Background and objective
 
-## 2. 変更内容
-[具体的にどのファイルをどう変更するか]
+[Explain why the change is needed.]
 
-## 3. 影響範囲 / リスク
-[既存機能への影響、注意点]
+## 2. Scope and changes
 
-## 4. テスト・検証計画
-[どのように動作確認を行うか]
+[List the exact in-scope and out-of-scope behavior and files.]
+
+## 3. Requirements and scenarios
+
+[State observable requirements with successful and failure scenarios.]
+
+## 4. Impact and risks
+
+[Describe compatibility, safety, privacy, performance, and operational risks.]
+
+## 5. Validation plan
+
+[List focused and full validation commands and acceptance criteria.]
+
+## 6. Approval boundary
+
+Implementation must not begin until a human changes the status to
+`✅ APPROVED`. Approval does not override protected-data or permission rules.

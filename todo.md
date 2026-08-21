@@ -1,16 +1,20 @@
-# タスクリスト
+# Task List
 
-## 完了したタスク
-- [x] バグ修正 (B1-B7) の実施
-- [x] pytest による自動テストスイートの構築
-- [x] モダンなGUI (CustomTkinter) の実装 (OpenSpec: 001_modern_gui)
-- [x] 起動用バッチファイル (`start_gui.bat`) の作成
-- [x] GitHubリポジトリへの登録とREADMEの更新
+## Completed
 
-## 次の目標
-- [x] DICOM匿名化チェッカー (CLI & GUI) の実装 (OpenSpec: 002)
-- [x] 内部UID参照の一貫性保持機能の実装 (OpenSpec: 003)
-- [x] Universal DICOM Template の実装 (OpenSpec: 004)
-- [x] Windows 10向けオフライン導入一式の実装・検証 (OpenSpec: 005 / PR #16)
-- [ ] 検証スクリプトの詳細化
-- [ ] PyInstallerによる実行ファイル化の検討
+- [x] Fix defects B1-B7.
+- [x] Build an automated pytest suite.
+- [x] Implement the modern CustomTkinter GUI (OpenSpec 001).
+- [x] Add `start_gui.bat`.
+- [x] Publish the GitHub repository and update its README.
+- [x] Implement the DICOM anonymization checker CLI and GUI (OpenSpec 002).
+- [x] Preserve internal UID reference consistency (OpenSpec 003).
+- [x] Implement the Universal DICOM Template (OpenSpec 004).
+- [x] Implement and validate Windows 10 offline installation (OpenSpec 005,
+      PR #16).
+- [x] Complete English repository and interface localization (OpenSpec 006).
+
+## Next objectives
+
+- [ ] Deepen validation-script coverage.
+- [ ] Evaluate PyInstaller executable packaging.

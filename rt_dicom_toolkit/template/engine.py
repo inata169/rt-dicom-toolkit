@@ -1,5 +1,5 @@
 """
-DICOMテンプレートエンジン
+DICOM template engine.
 """
 import copy
 import logging
@@ -14,20 +14,20 @@ logger = logging.getLogger(__name__)
 
 class DICOMTemplateEngine:
     """
-    テンプレートとなるDICOMファイルに、別のDICOMファイルから情報を抽出・合成するクラス
+    Synchronize selected source DICOM attributes into a template.
     """
     
     def __init__(self, template_path: str):
         """
         Args:
-            template_path: テンプレートとなるDICOMファイルのパス
+            template_path: Path to the template DICOM file.
         """
         self.template_path = template_path
-        # force=True で読み込み、未知のタグや不完全なメタデータにも対応
+        # force=True supports unknown tags and incomplete file metadata.
         self._template_dcm = pydicom.dcmread(template_path, force=True)
         
     def get_template_copy(self) -> pydicom.dataset.FileDataset:
-        """テンプレートのディープコピーを返す"""
+        """Return a deep copy of the loaded template."""
         return copy.deepcopy(self._template_dcm)
         
     def sync_from_source(self, source_dcm_path: str, 
@@ -35,16 +35,16 @@ class DICOMTemplateEngine:
                          sync_geometry: bool = True,
                          sync_rt_specific: bool = True) -> pydicom.dataset.FileDataset:
         """
-        元のDICOMファイルから情報を抽出し、テンプレートに合成して新しいデータセットを返す
+        Return a new dataset with selected source attributes synchronized.
         
         Args:
-            source_dcm_path: 情報の抽出元となるDICOMファイルのパス
-            sync_patient: 患者情報を同期するか
-            sync_geometry: 幾何学情報を同期するか
-            sync_rt_specific: RT系特有の情報を同期するか
+            source_dcm_path: Path to the source DICOM file.
+            sync_patient: Synchronize patient attributes when true.
+            sync_geometry: Synchronize geometry attributes when true.
+            sync_rt_specific: Synchronize RT-specific attributes when true.
             
         Returns:
-            合成済みの新しいDICOMデータセット
+            A synchronized copy of the template dataset.
         """
         source_dcm = pydicom.dcmread(source_dcm_path, force=True)
         target_dcm = self.get_template_copy()
@@ -57,17 +57,17 @@ class DICOMTemplateEngine:
         if sync_rt_specific:
             tags_to_sync.extend(RT_SPECIFIC_TAGS)
             
-        # タグのコピー
+        # Copy selected attributes.
         self._copy_tags(source_dcm, target_dcm, tags_to_sync)
         
-        # モダリティ不一致の警告
+        # Warn when template and source modalities differ.
         if hasattr(source_dcm, 'Modality') and hasattr(target_dcm, 'Modality'):
             if source_dcm.Modality != target_dcm.Modality:
                 logger.warning(f"Modality mismatch. Source: {source_dcm.Modality}, Template: {target_dcm.Modality}")
                 
-        # テンプレート化＝新しいインスタンス生成なので、UIDを更新
+        # Template output is a new instance, so create new UIDs.
         target_dcm.SOPInstanceUID = generate_uid()
-        # シリーズをまとめるか分けるかは要件によるが、今回は独立したファイルとして扱うためSeriesInstanceUIDも更新
+        # Treat each output as an independent series.
         target_dcm.SeriesInstanceUID = generate_uid()
         
         if hasattr(target_dcm, 'file_meta') and target_dcm.file_meta is not None:
@@ -76,13 +76,12 @@ class DICOMTemplateEngine:
         return target_dcm
         
     def _copy_tags(self, source: pydicom.dataset.Dataset, target: pydicom.dataset.Dataset, tag_names: list):
-        """指定されたタグのリストをsourceからtargetへコピーする"""
+        """Copy the listed DICOM keywords from source to target."""
         copied_count = 0
         for tag_name in tag_names:
             if hasattr(source, tag_name):
                 value = getattr(source, tag_name)
-                # target に上書き（または新規追加）
+                # Replace the target value or add it when absent.
                 setattr(target, tag_name, value)
                 copied_count += 1
-        logger.debug(f"{copied_count} 個のタグを同期しました。")
-
+        logger.debug(f"Synchronized {copied_count} attributes.")

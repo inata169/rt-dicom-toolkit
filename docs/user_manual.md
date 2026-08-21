@@ -1,476 +1,269 @@
-# RT DICOM匿名化・検証ツール 仕様書・マニュアル
+# RT DICOM Toolkit User Manual
 
-## 目次
+## Contents
 
-1. [はじめに](#1-はじめに)
-   1. [目的と概要](#11-目的と概要)
-   2. [システム要件](#12-システム要件)
-   3. [開発背景](#13-開発背景)
+1. [Introduction](#1-introduction)
+2. [Anonymizer](#2-anonymizer)
+3. [Validator](#3-validator)
+4. [Template synchronization](#4-template-synchronization)
+5. [Troubleshooting](#5-troubleshooting)
+6. [Security and privacy](#6-security-and-privacy)
+7. [Reference](#7-reference)
 
-2. [匿名化ツール (RTDicomAnonymizer)](#2-匿名化ツール-rtdiconanonymizer)
-   1. [概要](#21-概要)
-   2. [機能詳細](#22-機能詳細)
-   3. [インストールと起動](#23-インストールと起動)
-   4. [使用方法](#24-使用方法)
-   5. [匿名化プロファイル](#25-匿名化プロファイル)
-   6. [患者ID管理](#26-患者id管理)
+## 1. Introduction
 
-3. [検証ツール (RTDicomValidator)](#3-検証ツール-rtdicomvalidator)
-   1. [概要](#31-概要)
-   2. [機能詳細](#32-機能詳細)
-   3. [インストールと起動](#33-インストールと起動)
-   4. [使用方法](#34-使用方法)
-   5. [検証ルール](#35-検証ルール)
-   6. [レポートの解釈](#36-レポートの解釈)
+RT DICOM Toolkit provides desktop and command-line workflows for anonymizing
+radiotherapy DICOM, comparing original and anonymized files, and synchronizing
+selected values into a DICOM template.
 
-4. [トラブルシューティング](#4-トラブルシューティング)
-   1. [よくあるエラーと対策](#41-よくあるエラーと対策)
-   2. [ログファイルの活用](#42-ログファイルの活用)
+The toolkit supports research and education workflows. Its output alone does
+not guarantee complete de-identification, compliance with local policy or law,
+clinical suitability, patient QA, or vendor certification. A qualified human
+must define the applicable data-governance process and review the result.
 
-5. [セキュリティとプライバシー](#5-セキュリティとプライバシー)
-   1. [注意事項](#51-注意事項)
-   2. [推奨プラクティス](#52-推奨プラクティス)
+### 1.1 Components
 
-6. [付録](#6-付録)
-   1. [コマンドライン引数一覧](#61-コマンドライン引数一覧)
-   2. [参考リソース](#62-参考リソース)
-   3. [更新履歴](#63-更新履歴)
+- `RTDicomAnonymizer`: replaces configured identifying values, processes UIDs,
+  and optionally removes private tags.
+- `RTDicomValidator`: compares original and anonymized DICOM and generates
+  validation summaries and reports.
+- `DICOMTemplateEngine`: copies selected patient, geometry, and RT values from a
+  source into a template while generating new instance identifiers.
+- Desktop GUIs: expose the maintained workflows through CustomTkinter or Tkinter.
 
-## 1. はじめに
+### 1.2 Requirements
 
-### 1.1 目的と概要
+- Windows 10/11 is the primary desktop target.
+- Python 3.10 or later.
+- Runtime dependencies from `rt_dicom_toolkit/requirements.txt`.
+- Tcl/Tk, which is included by the standard python.org Windows installer.
 
-RT DICOM匿名化・検証ツールは、放射線治療（RT）に関連するDICOMファイルの匿名化と検証を行うためのソフトウェアスイートです。このツールは、医学研究や多施設共同研究でのデータ共有において、患者のプライバシーを保護しつつ、放射線治療計画データを適切に扱うことを目的としています。
+### 1.3 Installation
 
-ソフトウェアは2つの主要コンポーネントから構成されています：
-- **匿名化ツール (RTDicomAnonymizer)**: DICOM患者データを匿名化します
-- **検証ツール (RTDicomValidator)**: 匿名化の品質と整合性を検証します
-
-### 1.2 システム要件
-
-- **オペレーティングシステム**：Windows 10以降、macOS 10.14以降、各種Linuxディストリビューション
-- **Python環境**：Python 3.10以上
-- **必要ライブラリ**：
-  - pydicom （DICOMファイル操作）
-  - pandas （データ分析）
-  - matplotlib （グラフ生成）
-  - numpy （数値計算）
-  - tkinter （GUI - Pythonに標準搭載）
-
-### 1.3 開発背景
-
-放射線治療（RT）の分野では、治療計画データや臨床結果の共有が研究の発展に不可欠です。しかし、DICOMデータには患者の個人情報が含まれているため、適切な匿名化が必要となります。また、匿名化の品質を確保するためには、検証プロセスも重要です。
-
-このツールは、特に放射線治療特有のタグを考慮した匿名化と検証を一貫して行うために開発されました。
-
-## 2. 匿名化ツール (RTDicomAnonymizer)
-
-### 2.1 概要
-
-RTDicomAnonymizerは、DICOMファイルから個人識別情報を削除または変更し、研究や教育目的での安全なデータ共有を可能にします。
-
-### 2.2 機能詳細
-
-- **患者情報の匿名化**：患者名、ID、生年月日などの個人情報の削除・変更
-- **施設情報の匿名化**：病院名、機器情報などの匿名化
-- **UIDの管理**：一貫性のある方法でのUID再生成
-- **RT特有のタグの処理**：RT構造体のラベル・名前の適切な匿名化
-- **プライベートタグの管理**：ベンダー固有のタグの削除オプション
-- **ディレクトリ構造の保持/変更**：元のフォルダ構造を維持または単一化
-- **患者ID変換の管理**：ハッシュまたは連番によるID再割り当て
-- **処理ログの生成**：詳細な変更履歴と処理サマリーの作成
-
-### 2.3 インストールと起動
-
-1. 必要なライブラリをインストールします：
-
-```bash
-pip install pydicom pandas matplotlib numpy
+```powershell
+python -m pip install -r rt_dicom_toolkit/requirements.txt
+python -m pip install -e .
 ```
 
-2. `debug-dicom-anonymizer.py`ファイルを任意の場所にダウンロードします。
+For a network-isolated Windows x64 computer, follow
+[`windows_offline_installation.md`](windows_offline_installation.md).
 
-3. プログラムを起動します：
+## 2. Anonymizer
 
-   - **GUIモード**：
-   ```bash
-   python debug-dicom-anonymizer.py
-   ```
+### 2.1 Launch
 
-   - **コマンドラインモード**：
-   ```bash
-   python debug-dicom-anonymizer.py --nogui --input [入力ディレクトリ] --output [出力ディレクトリ] --log [ログディレクトリ]
-   ```
+Launch the main GUI:
 
-### 2.4 使用方法
-
-#### 2.4.1 GUIモードでの使用
-
-1. **ディレクトリ設定**
-   - 「入力ディレクトリ」：匿名化するDICOMファイルが保存されているディレクトリを選択
-   - 「出力ディレクトリ」：匿名化したファイルの保存先を選択
-   - 「ログディレクトリ」：ログファイルの保存先を選択
-
-2. **匿名化設定**
-   - **匿名化レベル**
-     - 「完全匿名化」：すべての個人情報タグを匿名化
-     - 「部分匿名化」：日付や施設情報など、一部のタグを保持
-
-   - **プライベートタグ**
-     - 「すべて削除」：ベンダー固有のタグをすべて削除
-     - 「保持」：プライベートタグを維持
-
-   - **UID処理**
-     - 「一貫性を保つ」：同じタグには常に同じ値を割り当て
-     - 「すべて新規生成」：毎回新しいUIDを生成
-
-   - **ディレクトリ構造**
-     - 「元のディレクトリ構造を保持」：サブフォルダ構造をそのまま複製
-     - 「保持しない」：すべてのファイルを単一ディレクトリに出力
-
-   - **患者ID変換**
-     - 「ハッシュ化」：元のIDをハッシュベースで変換
-     - 「連番」：順番に番号を割り当て
-
-3. **実行**
-   - 「ディレクトリ調査」ボタン：入力ディレクトリのDICOMファイルの概要を確認
-   - 「匿名化実行」ボタン：設定に基づいて匿名化処理を実行
-
-4. **処理状況確認**
-   - 進捗バーで処理状況を確認
-   - ログテキストエリアに詳細な進捗が表示
-   - 処理完了後、成功・スキップ・エラーの数がポップアップ表示
-
-#### 2.4.2 コマンドラインモードでの使用
-
-コマンドラインモードでは、次の形式でプログラムを実行します：
-
-```bash
-python debug-dicom-anonymizer.py --nogui --input ./input_dicom --output ./anonymous_dicom --log ./logs
+```powershell
+python -m rt_dicom_toolkit
 ```
 
-処理後は指定したログディレクトリにログファイルとサマリーファイルが生成されます。
+Run the CLI:
 
-### 2.5 匿名化プロファイル
-
-匿名化ツールは以下のタグカテゴリに対して特定の処理を行います：
-
-#### 2.5.1 基本的な患者情報
-
-- **PatientName**：「ANONYMOUS」に置換
-- **PatientID**：ハッシュベースの一貫したIDに変換（9で始まる7桁の数字）
-- **PatientBirthDate**：「19000101」（1900年1月1日）に置換
-- **PatientSex**：「O」（Other）に置換
-- **PatientAge**：「000Y」に置換
-- **PatientWeight**：空白化
-- **PatientAddress**：空白化
-- **PatientTelephoneNumbers**：空白化
-
-#### 2.5.2 研究・施設情報
-
-- **StudyID**：ハッシュベースの8桁の値に変換
-- **AccessionNumber**：空白化
-- **InstitutionName**：「ANONYMOUS_INSTITUTION」に置換
-- **InstitutionAddress**：空白化
-- **ReferringPhysicianName**：「ANONYMOUS_PHYSICIAN」に置換
-- **PhysiciansOfRecord**：空白化
-- **PerformingPhysicianName**：空白化
-- **OperatorsName**：空白化
-
-#### 2.5.3 識別子
-
-- **StudyInstanceUID**：新しいUIDに置換
-- **SeriesInstanceUID**：新しいUIDに置換
-- **SOPInstanceUID**：新しいUIDに置換
-- **FrameOfReferenceUID**：新しいUIDに置換
-
-#### 2.5.4 日付と時刻
-
-- **日付（StudyDate等）**：年を2000年に変更し、月日は保持
-- **時刻（StudyTime等）**：そのまま保持または無効化（設定による）
-
-#### 2.5.5 RT特有のタグ
-
-- **StructureSetLabel**：「ANONYMOUS_」＋元の値の末尾5文字
-- **StructureSetName**：「ANONYMOUS_」＋元の値の末尾5文字
-- **ROIName**：解剖学的構造名（lung, heart等）は保持、それ以外は「ROI_」＋元の値の末尾10文字
-- **DoseComment**：「ANONYMIZED」に置換
-- **PlanLabel**：「ANONYMOUS_PLAN_」＋元の値の末尾5文字
-
-### 2.6 患者ID管理
-
-匿名化ツールは、患者IDの変換において一貫性と安全性を確保するために、次の機能を提供します：
-
-- **一貫性のある変換**：同じ患者IDには常に同じ匿名化IDを割り当て
-- **9で始まる7桁のID形式**：9000001から開始する連番を割り当て
-- **ID枯渇対策**：9999999を超えた場合のハッシュベースのフォールバック
-- **患者ID対応表の保存**：処理サマリーに匿名化前後のID対応を記録（マスク処理あり）
-
-## 3. 検証ツール (RTDicomValidator)
-
-### 3.1 概要
-
-RTDicomValidatorは、匿名化されたDICOMファイルを原本と比較し、匿名化の品質と整合性を検証するツールです。DICOMタグの変更状態を分析し、視覚的に結果を表示します。
-
-### 3.2 機能詳細
-
-- **原本と匿名化ファイルの比較**：タグごとの変更状態の詳細分析
-- **タグ分類ごとの検証**：匿名化必須タグ、UID、構造タグの確認
-- **プライベートタグの確認**：プライベートタグの削除検証
-- **RT特有タグの処理確認**：ROINameなどの特殊処理の検証
-- **詳細レポート生成**：タグごとの比較結果と統計の出力
-- **グラフ表示**：匿名化率や処理状況のグラフ化
-- **ディレクトリ比較**：ファイル数やモダリティ分布の分析
-
-### 3.3 インストールと起動
-
-1. 必要なライブラリをインストールします：
-
-```bash
-pip install pydicom pandas matplotlib numpy
+```powershell
+python -m rt_dicom_toolkit --input SYNTHETIC_INPUT --output OUTPUT_DIRECTORY
 ```
 
-2. `dicom-anonymization-validator.py`ファイルをダウンロードします。
+Use only synthetic data during development and repository validation. An
+operational workflow that handles real-patient data must keep input, output,
+reports, logs, and screenshots outside the repository.
 
-3. プログラムを起動します：
+### 2.2 GUI workflow
 
-   - **GUIモード**：
-   ```bash
-   python dicom-anonymization-validator.py
-   ```
+1. Select the input directory.
+2. Select an output directory outside the input tree.
+3. Choose UID handling:
+   - `consistent` maps each old UID to one new UID and preserves references;
+   - `generate` creates new values according to the selected profile.
+4. Choose whether to preserve the source directory structure.
+5. Choose whether to remove private tags. Private tags may contain identifying
+   information and should normally be removed unless the data-governance process
+   explicitly allows them.
+6. Start anonymization and monitor progress and log messages.
+7. Review the completion summary and validate the output before release or use.
 
-   - **コマンドラインモード**：
-   ```bash
-   python dicom-anonymization-validator.py --nogui --original [原本ディレクトリパス] --anonymized [匿名化ディレクトリパス] --report [レポート出力ディレクトリパス]
-   ```
+### 2.3 CLI options
 
-### 3.4 使用方法
+Run `python -m rt_dicom_toolkit --help` for the authoritative option list.
+The maintained CLI accepts input, output, log, anonymization-level,
+private-tag, UID-handling, patient-ID, and directory-structure settings.
 
-#### 3.4.1 GUIモードでの使用
+Example:
 
-1. **ディレクトリ設定**
-   - 「原本ディレクトリ」：原本DICOMファイルが保存されているディレクトリを指定
-   - 「匿名化ディレクトリ」：匿名化されたDICOMファイルが保存されているディレクトリを指定
-   - 「レポートディレクトリ」：検証レポートを保存するディレクトリを指定
-
-2. **検証設定**
-   - **匿名化レベル確認**
-     - 「完全匿名化」：すべての個人情報タグが匿名化されていることを確認
-     - 「部分匿名化」：日付や施設情報は保持されていても許容
-
-   - **プライベートタグ**：プライベートタグの削除を確認するかどうかを指定
-   - **構造確認**：ファイル構造が保持されているかを確認
-   - **UID確認**：すべてのUIDが変更されていることを確認
-   - **レポートレベル**：詳細なレポートを生成するかどうかを指定
-
-3. **実行と結果確認**
-   - 「ディレクトリ比較」ボタン：基本的なディレクトリ比較を実行
-   - 「検証実行」ボタン：詳細な匿名化検証を実行
-
-4. **結果表示**
-   - 「ログ」タブ：検証の進行状況と詳細ログ
-   - 「結果サマリー」タブ：匿名化検証の結果概要
-   - 「グラフ」タブ：匿名化率などのグラフ表示
-   - 「詳細」タブ：タグごとの比較結果のツリービュー
-
-#### 3.4.2 コマンドラインモードでの使用
-
-コマンドラインモードでは、次の形式でプログラムを実行します：
-
-```bash
-python dicom-anonymization-validator.py --nogui --original ./input_dicom --anonymized ./anonymous_dicom --report ./validation_reports
+```powershell
+python -m rt_dicom_toolkit `
+  --input SYNTHETIC_INPUT `
+  --output OUTPUT_DIRECTORY `
+  --private remove `
+  --uid consistent
 ```
 
-実行後、指定したレポートディレクトリにレポートファイルが生成されます。
+### 2.4 Anonymization profile
 
-### 3.5 検証ルール
+The exact profile is defined in `rt_dicom_toolkit/anonymizer/profiles.py`.
+Important behaviors include:
 
-検証ツールは以下のタグカテゴリに分類して匿名化状態を検証します：
+- replacing Patient Name and Patient ID;
+- replacing or clearing configured birth, address, telephone, physician,
+  operator, accession, and institution values;
+- mapping Study, Series, SOP Instance, and Frame of Reference UIDs;
+- recursively updating mapped UID references inside sequences;
+- processing configured RT labels and comments; and
+- optionally removing private tags recursively.
 
-#### 3.5.1 必須匿名化タグ
+Do not treat this summary as a complete list of potentially identifying DICOM
+attributes. Review the active profile and local requirements for every data-
+sharing workflow.
 
-必ず匿名化されるべきタグとして検証：
-- PatientName（患者名）
-- PatientID（患者ID）
-- PatientBirthDate（患者生年月日）
-- PatientAddress（患者住所）
-- PatientTelephoneNumbers（患者電話番号）
-- ReferringPhysicianName（紹介医師名）
-- PhysiciansOfRecord（記録医師名）
-- PerformingPhysicianName（実施医師名）
-- InstitutionName（施設名）
-- InstitutionAddress（施設住所）
-- StationName（装置名）
-- OperatorsName（操作者名）
+### 2.5 UID and relationship handling
 
-#### 3.5.2 UIDタグ
+In consistent mode, the anonymizer first builds an old-to-new mapping for major
+UIDs, then applies it to the objects and referenced UI elements. This preserves
+relationships such as CT to RTSTRUCT, RTSTRUCT to RTPLAN, and RTPLAN to RTDOSE.
 
-元のIDとは異なる値に変更されているべきタグ：
-- StudyInstanceUID
-- SeriesInstanceUID
-- SOPInstanceUID
-- FrameOfReferenceUID
+Changing UID behavior can make an RT dataset unusable. Such a change requires a
+separate approved OpenSpec and synthetic reference-chain tests.
 
-#### 3.5.3 構造タグ
+### 2.6 Patient-ID mapping and logs
 
-DICOMの構造を維持するために保持されるべきタグ：
-- Modality（モダリティ）
-- SOPClassUID
-- ImageType（画像タイプ）
-- SamplesPerPixel（ピクセルあたりのサンプル数）
-- PhotometricInterpretation（光度測定解釈）
-- BitsAllocated（割り当てビット数）
-- BitsStored（格納ビット数）
-- HighBit（高位ビット）
-- PixelRepresentation（ピクセル表現）
-- NumberOfFrames（フレーム数）
+The anonymizer may keep an in-memory mapping while processing a directory and
+may include a masked mapping in its summary. Treat summaries and logs as
+sensitive operational output even after anonymization. Do not commit them.
 
-#### 3.5.4 オプション匿名化タグ
+## 3. Validator
 
-匿名化レベルに応じて匿名化されるか保持されるタグ：
-- StudyDate（検査日）
-- SeriesDate（シリーズ日）
-- AcquisitionDate（取得日）
-- ContentDate（コンテンツ日）
-- StudyTime（検査時間）
-- SeriesTime（シリーズ時間）
-- AcquisitionTime（取得時間）
-- ContentTime（コンテンツ時間）
-- AccessionNumber（受付番号）
-- StudyID（検査ID）
-- SeriesNumber（シリーズ番号）
-- AcquisitionNumber（取得番号）
-- InstanceNumber（インスタンス番号）
-- ImagePositionPatient（患者座標系における画像位置）
-- ImageOrientationPatient（患者座標系における画像方向）
-- DeviceSerialNumber（装置シリアル番号）
+### 3.1 Launch
 
-#### 3.5.5 RT構造特有のタグ
+Run a paired comparison from the package CLI:
 
-放射線治療に特有のタグ：
-- StructureSetLabel（構造セットラベル）
-- StructureSetName（構造セット名）
-- ROIName（ROI名）
-- DoseComment（線量コメント）
-- PlanLabel（治療計画ラベル）
+```powershell
+python -m rt_dicom_toolkit validate `
+  --original SYNTHETIC_ORIGINAL `
+  --anonymized SYNTHETIC_ANONYMIZED `
+  --report REPORT_DIRECTORY
+```
 
-※ROINameは臓器名などの場合、匿名化せずに保持されるべき場合があります。
+Launch the maintained validator GUI directly:
 
-#### 3.5.6 プライベートタグ
+```powershell
+python -m rt_dicom_toolkit.gui.validator_gui
+```
 
-ベンダー固有のプライベートタグは個人情報を含む可能性があるため、通常は削除されるべきです。
+The standalone checker also supports a directory-only scan and paired
+comparison:
 
-### 3.6 レポートの解釈
+```powershell
+python check_anonymization.py --help
+```
 
-#### 3.6.1 サマリーレポートの見方
+### 3.2 GUI workflow
 
-サマリーレポートには以下の情報が含まれます：
+1. Select the original, anonymized, and report directories.
+2. Configure the profile, private-tag, structure, UID, and report-detail checks.
+3. Run a directory comparison for file and modality counts if needed.
+4. Start validation.
+5. Review logs, the summary, charts, and per-tag details.
+6. Store reports according to the workflow's access-control policy; do not
+   commit operational reports.
 
-- 検証日時
-- 総ファイル数とマッチングファイル数
-- 必須タグ匿名化率（全体）
-- タグごとの匿名化率
-- UIDタグの変更状況
-- 構造タグの保持状況
-- プライベートタグの削除状況
-- モダリティ分布
-- 患者ID対応表（最大10件）
+### 3.3 Validation categories
 
-判定基準：
-- ✅ 良好： 95%以上のタグが正しく処理されている
-- ⚠️ 要確認： 80-95%のタグが正しく処理されている
-- ❌ 不十分： 80%未満のタグしか正しく処理されていない
+The authoritative rules are in `rt_dicom_toolkit/validator/rules.py`.
 
-#### 3.6.2 詳細レポートの活用
+- Required anonymization tags include configured patient, physician,
+  institution, station, and operator values.
+- UID checks cover Study, Series, SOP Instance, and Frame of Reference UIDs.
+- Structure checks cover selected modality, SOP Class, image encoding, pixel,
+  and frame attributes.
+- Optional checks cover dates, times, identifiers, image coordinates, and device
+  identifiers according to the selected level.
+- RT checks cover configured Structure Set, ROI, Dose, and Plan labels.
+- Private-tag checks report whether vendor-private content remains.
 
-詳細レポートはJSON形式で保存され、各ファイルごとのタグ比較結果が含まれています。このレポートは以下の用途に活用できます：
+### 3.4 Interpreting a report
 
-- 特定のファイルに関する詳細な匿名化状態の確認
-- 匿名化処理の問題点の特定
-- 匿名化ソフトウェアの改善点の抽出
-- 監査証跡としての保存
+Reports can include total and matched file counts, per-category results, UID
+changes, structure preservation, private-tag removal, modality distribution,
+and a masked patient-ID mapping.
 
-グラフ表示では、各タグの匿名化率が視覚的に表現され、95%と80%の基準線が示されています。
+The current summary uses these display thresholds:
 
-## 4. トラブルシューティング
+- 95 percent or greater: good;
+- 80 to less than 95 percent: review required;
+- less than 80 percent: insufficient.
 
-### 4.1 よくあるエラーと対策
+These percentages are application heuristics, not proof of de-identification or
+clinical validity. Investigate each failed or skipped tag and apply the governing
+privacy policy before using or sharing data.
 
-#### 4.1.1 匿名化ツール
+## 4. Template synchronization
 
-| エラー・問題 | 考えられる原因 | 対策 |
-|------------|--------------|------|
-| ファイル保存エラー | 書き込み権限の不足 | 出力ディレクトリの権限を確認 |
-| 処理が途中で止まる | メモリ不足、大きなファイル | 小さなバッチに分けて処理 |
-| DICOMとして認識されない | 破損または非標準ファイル | force=Trueオプションを使用 |
-| 患者ID一貫性の問題 | 同一患者の異なる表記 | 事前に患者IDをマッピング |
+The template workflow copies configured patient, geometry, and RT-specific tags
+from a source dataset into a deep copy of a DICOM template. It generates a new
+SOP Instance UID and Series Instance UID for the output.
 
-#### 4.1.2 検証ツール
+CLI example:
 
-| エラー・問題 | 考えられる原因 | 対策 |
-|------------|--------------|------|
-| ファイルが見つからない | ディレクトリパスの誤り | パスが正しいか確認 |
-| マッチングファイルが少ない | ファイル構造・名前の変更 | ディレクトリ比較を実行 |
-| 匿名化率が低い | 匿名化処理の不備 | 個別タグの状態を確認 |
-| グラフ表示エラー | matplotlib互換性 | ライブラリを更新 |
+```powershell
+python -m rt_dicom_toolkit template `
+  --template SYNTHETIC_TEMPLATE.dcm `
+  --input SYNTHETIC_SOURCE `
+  --output OUTPUT_DIRECTORY
+```
 
-### 4.2 ログファイルの活用
+Use `--no-patient` or `--no-geometry` to disable those synchronization groups.
+Modality mismatches produce a warning and require human review. Template
+synchronization does not establish geometric, dosimetric, or clinical validity.
 
-両ツールは詳細なログを生成します。問題が発生した場合は、以下の情報をログから確認できます：
+## 5. Troubleshooting
 
-- **処理日時と設定情報**：処理時の設定とタイムスタンプ
-- **個別ファイルの処理状況**：成功、スキップ、エラーの詳細
-- **エラートレースバック**：問題が発生した正確な場所と理由
-- **警告メッセージ**：潜在的な問題点の通知
+| Symptom | Possible cause | Action |
+|---|---|---|
+| Output cannot be saved | Missing permission or invalid output path | Select a writable directory outside the repository and input tree. |
+| Processing stops on a large dataset | Memory or I/O pressure | Process a smaller synthetic batch during diagnosis and inspect the log. |
+| A file is not recognized as DICOM | Damaged or non-standard input | Verify the source independently; do not weaken validation without approval. |
+| Few files match during validation | Names or directory structure changed | Run directory comparison and inspect matching diagnostics. |
+| Anonymization score is low | Expected tags remain or files did not match | Review per-tag results and the active profile. |
+| Charts do not render | Tk or matplotlib backend is unavailable | Verify the installed runtime and Tk dependencies. |
+| Offline launch fails | Bundle integrity or `.venv` is invalid | Run the documented offline smoke test and inspect installer output. |
 
-ログファイルは技術サポートを受ける際にも有用です。
+Logs may contain file names, paths, identifiers, or mappings. Keep them outside
+Git and restrict access. When reporting a defect, reproduce it with synthetic
+data instead of attaching operational logs.
 
-## 5. セキュリティとプライバシー
+## 6. Security and privacy
 
-### 5.1 注意事項
+- Keep original DICOM, anonymized output, reports, logs, and screenshots outside
+  the source repository.
+- Prefer isolated, access-controlled storage for operational processing.
+- Limit access to any reidentification or patient-ID mapping.
+- Validate the anonymized result independently before sharing it.
+- Follow the applicable law, ethics approval, data-use agreement, and
+  institutional policy.
+- Do not infer that preserved RT structure is clinically correct merely because
+  it survived anonymization.
+- Use synthetic DICOM for software development, tests, examples, and issue
+  reproduction.
 
-- このツールは研究・教育目的で開発されており、臨床利用には追加検証が必要
-- 匿名化されたデータでも、再識別リスクが完全にゼロになるわけではない
-- 患者ID対応表などの機密情報を含むログは安全に管理すべき
-- 完全な匿名化と放射線治療特有の構造保持のバランスに注意
+## 7. Reference
 
-### 5.2 推奨プラクティス
+### 7.1 Primary commands
 
-- **データ保管**：匿名化データ・ログファイルはアクセス制限のあるシステムで管理
-- **ID対応表**：患者ID対応表は最小限の権限を持つ人だけにアクセスを制限
-- **検証作業**：匿名化前に必ずテスト検証を行い、結果を確認
-- **法規制遵守**：地域の医療データ保護法規制に準拠した運用
-- **教育利用**：教育目的で使用する場合も個人の特定につながる情報に注意
+```text
+python -m rt_dicom_toolkit --help
+python -m rt_dicom_toolkit validate --help
+python -m rt_dicom_toolkit template --help
+python check_anonymization.py --help
+```
 
-## 6. 付録
+### 7.2 External references
 
-### 6.1 コマンドライン引数一覧
+- [pydicom documentation](https://pydicom.github.io/)
+- [DICOM standard](https://www.dicomstandard.org/)
+- [DICOM PS3.15 Security and System Management Profiles](https://dicom.nema.org/medical/dicom/current/output/html/part15.html)
+- [AAPM TG-263 report](https://www.aapm.org/pubs/reports/RPT_263.pdf)
 
-#### 匿名化ツール (debug-dicom-anonymizer.py)
+### 7.3 Revision history
 
-| 引数 | 説明 |
-|------|------|
-| --nogui | GUIを使用せずコマンドラインモードで実行 |
-| --input | 入力ディレクトリのパス |
-| --output | 出力ディレクトリのパス |
-| --log | ログディレクトリのパス |
-
-#### 検証ツール (dicom-anonymization-validator.py)
-
-| 引数 | 説明 |
-|------|------|
-| --nogui | GUIを使用せずコマンドラインモードで実行 |
-| --original | 原本DICOMディレクトリのパス |
-| --anonymized | 匿名化DICOMディレクトリのパス |
-| --report | レポート出力ディレクトリのパス |
-
-### 6.2 参考リソース
-
-- **pydicom**: [https://pydicom.github.io/](https://pydicom.github.io/)
-- **DICOM標準**: [https://www.dicomstandard.org/](https://www.dicomstandard.org/)
-- **DICOM匿名化プロファイル**: [DICOM PS3.15](http://dicom.nema.org/medical/dicom/current/output/html/part15.html)
-- **放射線治療DICOMガイド**: [AAPM TG-263 Report](https://www.aapm.org/pubs/reports/RPT_263.pdf)
-
-### 6.3 更新履歴
-
-- 初版: 2025年3月10日
+- Initial Japanese edition: 2025-03-10.
+- English repository edition: 2026-08-21 (OpenSpec 006).

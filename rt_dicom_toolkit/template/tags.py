@@ -1,8 +1,8 @@
 """
-DICOMテンプレート同期に使用するタグ定義
+DICOM keywords used by template synchronization.
 """
 
-# 患者・検査情報（基本的な識別子）
+# Patient and study identifiers.
 PATIENT_TAGS = [
     "PatientName",
     "PatientID",
@@ -15,7 +15,7 @@ PATIENT_TAGS = [
     "AccessionNumber",
 ]
 
-# 幾何学的・画像情報（座標や解像度）
+# Geometry and image attributes.
 GEOMETRY_TAGS = [
     "ImagePositionPatient",
     "ImageOrientationPatient",
@@ -28,7 +28,7 @@ GEOMETRY_TAGS = [
     "NumberOfFrames",
 ]
 
-# RTDOSEなどに特有のタグ（必要に応じて同期）
+# RT-specific attributes, including RTDOSE values.
 RT_SPECIFIC_TAGS = [
     "GridFrameOffsetVector",
     "DoseGridScaling",

@@ -1,61 +1,66 @@
-# Windows 10 オフライン導入検証記録（2026-08-10）
+# Windows 10 Offline Installation Validation Record (2026-08-10)
 
-## 対象
+## Target
 
-- リポジトリ: `inata169/rt-dicom-toolkit`
-- バンドル: `rt-dicom-toolkit-offline-win64-1.0.0.zip`
-- バンドル作成元コミット: `898e2d8adc3060764041fb6814cd59597cac594d`
-- バンドルSHA-256:
+- Repository: `inata169/rt-dicom-toolkit`
+- Bundle: `rt-dicom-toolkit-offline-win64-1.0.0.zip`
+- Source commit: `898e2d8adc3060764041fb6814cd59597cac594d`
+- Bundle SHA-256:
   `bb4912e2286ed60ed1ade7aee9a86b00f09b4beeb5dbe3df7d86ad71eca8e642`
-- 対象Python: CPython 3.12.10 x64
-- 対象OS: Windows 10 x64
+- Python: CPython 3.12.10 x64
+- OS: Windows 10 x64
 
-## 自動検証
+## Automated validation
 
-バンドル作成は`PYTHONHOME`と`PYTHONPATH`に無効なパスを設定し、さらに
-`PIP_REQUIRE_VIRTUALENV=1`とした状態で実行した。producer Python、依存取得、
-アプリwheelビルドが継承環境から隔離されることを確認した。
+Bundle construction ran with invalid paths in `PYTHONHOME` and `PYTHONPATH` and
+with `PIP_REQUIRE_VIRTUALENV=1`. This confirmed that producer Python,
+dependency retrieval, and application-wheel construction were isolated from an
+inherited environment.
 
-開発環境では、外部通信先を到達不能な`127.0.0.1:9`へ固定し、`PIP_FIND_LINKS`、
-`PIP_INDEX_URL`、`PIP_EXTRA_INDEX_URL`を到達不能なURLへ設定した状態で、展開した
-バンドルの`install_offline.bat`を実行した。`PYTHONHOME`と`PYTHONPATH`にも無効な
-パスを設定し、バッチファイルによる環境分離を確認した。
+In the development environment, all external destinations were redirected to
+unreachable `127.0.0.1:9`, and `PIP_FIND_LINKS`, `PIP_INDEX_URL`, and
+`PIP_EXTRA_INDEX_URL` were set to unreachable URLs before running the extracted
+`install_offline.bat`. Invalid `PYTHONHOME` and `PYTHONPATH` values additionally
+tested batch-file environment isolation.
 
-| 確認項目 | 結果 |
-| --- | --- |
-| PythonインストーラのAuthenticode署名 | PASS（Python Software Foundation） |
-| ZIP内ペイロード59ファイルのSHA-256 | PASS |
-| 固定依存wheel 17個＋アプリwheel 1個 | PASS |
-| 専用`.venv`の作成 | PASS |
-| `--isolated --no-index`でのwheel導入 | PASS |
-| `python.exe`が欠損した`.venv`のデータ退避・再作成 | PASS |
-| 非Python実行ファイルへ置換した`.venv`の検出・再作成 | PASS |
-| 旧`.venv`内データの退避とSHA-256一致 | PASS |
-| 同一版アプリファイル破損後の強制再導入 | PASS |
+| Check | Result |
+|---|---|
+| Python installer Authenticode signature | PASS, Python Software Foundation |
+| SHA-256 for 59 ZIP payload files | PASS |
+| 17 pinned dependency wheels plus one application wheel | PASS |
+| Dedicated `.venv` creation | PASS |
+| `--isolated --no-index` wheel installation | PASS |
+| Preserve data and recreate `.venv` with missing `python.exe` | PASS |
+| Detect and recreate `.venv` containing a non-Python replacement executable | PASS |
+| Preserve legacy `.venv` data with matching SHA-256 | PASS |
+| Force reinstall after same-version application-file corruption | PASS |
 | `pip check` | PASS |
-| 合成DICOM匿名化 | PASS |
-| 匿名化前後の検証 | PASS |
-| Universal Template同期 | PASS |
-| GUI依存のimport | PASS |
-| pytest | 17件PASS |
+| Synthetic-DICOM anonymization | PASS |
+| Before/after validation | PASS |
+| Universal Template synchronization | PASS |
+| GUI dependency imports | PASS |
+| pytest | 17 passed |
 
-スモークテストには実患者データを使用せず、実行時に生成して終了時に削除する最小の
-合成CT DICOMだけを使用した。
+The smoke test used only minimal synthetic CT DICOM generated at runtime and
+deleted at completion. It did not use real-patient data.
 
-## Windows 10オフライン実機確認
+## Offline Windows 10 machine check
 
-2026-08-10、利用者から次の結果が報告された。
+On 2026-08-10, the user reported:
 
-- インターネット未接続のWindows 10 PCへGUIをインストールできた。
-- 専用環境からGUIを起動できた。
-- GUIを実際に使用し、正常に動作することを確認できた。
+- successful GUI installation on a Windows 10 computer with no internet
+  connection;
+- successful launch from the dedicated environment; and
+- successful normal GUI operation.
 
-実機の詳細なWindowsビルド番号は本記録では未収集である。
+The exact Windows build number was not collected in this record.
 
-## 結論
+## Conclusion
 
-本バンドルは、Windows 10 x64オフラインPCへのUSB経由導入、専用仮想環境での
-実行、および主要機能の利用が可能であることを確認した。
+The validated bundle supported USB transfer, installation on an offline Windows
+10 x64 computer, execution in a dedicated virtual environment, and use of its
+primary functions.
 
-今後バンドル内容または依存ロックを変更した場合は、ZIPのSHA-256を更新し、
-`install_offline.bat`、`pip check`、合成DICOMスモークテスト、GUI目視起動を再確認する。
+After changing bundle contents or dependency pins, update the ZIP SHA-256 and
+repeat `install_offline.bat`, `pip check`, the synthetic-DICOM smoke test, and a
+visual GUI launch check.

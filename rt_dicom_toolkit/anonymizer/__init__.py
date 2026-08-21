@@ -1,5 +1,5 @@
 """
-DICOM匿名化機能を提供するモジュール
+DICOM anonymization package.
 """
 
 from .core import RTDicomAnonymizer

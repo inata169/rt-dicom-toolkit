@@ -24,54 +24,54 @@ class TemplateApp(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
         
-        # --- 設定パネル ---
+        # Settings panel.
         self.settings_frame = ctk.CTkFrame(self)
         self.settings_frame.grid(row=0, column=0, padx=20, pady=20, sticky="ew")
         self.settings_frame.grid_columnconfigure(1, weight=1)
         
-        # テンプレートファイル
-        self.template_label = ctk.CTkLabel(self.settings_frame, text="テンプレートDICOM:")
+        # Template file.
+        self.template_label = ctk.CTkLabel(self.settings_frame, text="Template DICOM:")
         self.template_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
         
         self.template_entry = ctk.CTkEntry(self.settings_frame)
         self.template_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
         
-        self.template_btn = ctk.CTkButton(self.settings_frame, text="参照", width=80, command=self._browse_template)
+        self.template_btn = ctk.CTkButton(self.settings_frame, text="Browse", width=80, command=self._browse_template)
         self.template_btn.grid(row=0, column=2, padx=10, pady=10)
         
-        # 入力ディレクトリ
-        self.input_label = ctk.CTkLabel(self.settings_frame, text="情報抽出元 (Dir/File):")
+        # Source directory or file.
+        self.input_label = ctk.CTkLabel(self.settings_frame, text="Source (directory/file):")
         self.input_label.grid(row=1, column=0, padx=10, pady=10, sticky="w")
         
         self.input_entry = ctk.CTkEntry(self.settings_frame)
         self.input_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
         
-        self.input_btn = ctk.CTkButton(self.settings_frame, text="参照", width=80, command=self._browse_input)
+        self.input_btn = ctk.CTkButton(self.settings_frame, text="Browse", width=80, command=self._browse_input)
         self.input_btn.grid(row=1, column=2, padx=10, pady=10)
         
-        # 出力ディレクトリ
-        self.output_label = ctk.CTkLabel(self.settings_frame, text="出力ディレクトリ:")
+        # Output directory.
+        self.output_label = ctk.CTkLabel(self.settings_frame, text="Output directory:")
         self.output_label.grid(row=2, column=0, padx=10, pady=10, sticky="w")
         
         self.output_entry = ctk.CTkEntry(self.settings_frame)
         self.output_entry.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
         
-        self.output_btn = ctk.CTkButton(self.settings_frame, text="参照", width=80, command=self._browse_output)
+        self.output_btn = ctk.CTkButton(self.settings_frame, text="Browse", width=80, command=self._browse_output)
         self.output_btn.grid(row=2, column=2, padx=10, pady=10)
         
-        # オプション設定
+        # Options.
         self.options_frame = ctk.CTkFrame(self.settings_frame, fg_color="transparent")
         self.options_frame.grid(row=3, column=0, columnspan=3, padx=10, pady=5, sticky="ew")
         
         self.sync_patient_var = ctk.BooleanVar(value=True)
-        self.sync_patient_cb = ctk.CTkCheckBox(self.options_frame, text="患者情報を同期", variable=self.sync_patient_var)
+        self.sync_patient_cb = ctk.CTkCheckBox(self.options_frame, text="Synchronize patient attributes", variable=self.sync_patient_var)
         self.sync_patient_cb.grid(row=0, column=0, padx=20, pady=5)
         
         self.sync_geometry_var = ctk.BooleanVar(value=True)
-        self.sync_geometry_cb = ctk.CTkCheckBox(self.options_frame, text="幾何学情報を同期", variable=self.sync_geometry_var)
+        self.sync_geometry_cb = ctk.CTkCheckBox(self.options_frame, text="Synchronize geometry", variable=self.sync_geometry_var)
         self.sync_geometry_cb.grid(row=0, column=1, padx=20, pady=5)
         
-        # --- ログ表示パネル ---
+        # Log panel.
         self.log_frame = ctk.CTkFrame(self)
         self.log_frame.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="nsew")
         self.log_frame.grid_columnconfigure(0, weight=1)
@@ -81,35 +81,35 @@ class TemplateApp(ctk.CTk):
         self.log_textbox.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.log_textbox.configure(state="disabled")
         
-        # --- ステータス・実行パネル ---
+        # Status and run panel.
         self.status_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.status_frame.grid(row=2, column=0, padx=20, pady=(0, 20), sticky="ew")
         self.status_frame.grid_columnconfigure(0, weight=1)
         
-        self.status_label = ctk.CTkLabel(self.status_frame, text="待機中...")
+        self.status_label = ctk.CTkLabel(self.status_frame, text="Ready")
         self.status_label.grid(row=0, column=0, sticky="w", padx=5)
         
         self.progress_bar = ctk.CTkProgressBar(self.status_frame)
         self.progress_bar.grid(row=1, column=0, sticky="ew", padx=5, pady=(5, 10))
         self.progress_bar.set(0)
         
-        self.run_btn = ctk.CTkButton(self.status_frame, text="合成を開始", height=40, font=("", 16, "bold"), command=self._start_processing)
+        self.run_btn = ctk.CTkButton(self.status_frame, text="Start synchronization", height=40, font=("", 16, "bold"), command=self._start_processing)
         self.run_btn.grid(row=1, column=1, padx=(10, 5), pady=(5, 10))
 
     def _browse_template(self):
-        path = filedialog.askopenfilename(title="テンプレートDICOMの選択", filetypes=[("DICOM Files", "*.dcm"), ("All Files", "*.*")])
+        path = filedialog.askopenfilename(title="Select template DICOM", filetypes=[("DICOM Files", "*.dcm"), ("All Files", "*.*")])
         if path:
             self.template_entry.delete(0, 'end')
             self.template_entry.insert(0, path)
 
     def _browse_input(self):
-        path = filedialog.askdirectory(title="情報抽出元ディレクトリの選択")
+        path = filedialog.askdirectory(title="Select source directory")
         if path:
             self.input_entry.delete(0, 'end')
             self.input_entry.insert(0, path)
 
     def _browse_output(self):
-        path = filedialog.askdirectory(title="出力ディレクトリの選択")
+        path = filedialog.askdirectory(title="Select output directory")
         if path:
             self.output_entry.delete(0, 'end')
             self.output_entry.insert(0, path)
@@ -126,17 +126,17 @@ class TemplateApp(ctk.CTk):
         def update():
             progress = current / total if total > 0 else 0
             self.progress_bar.set(progress)
-            self.status_label.configure(text=f"処理中... {current}/{total} ({progress*100:.1f}%) : {filename}")
+            self.status_label.configure(text=f"Processing... {current}/{total} ({progress*100:.1f}%) : {filename}")
         self.after(0, update)
         
     def _processing_finished(self, success, message=""):
         def update():
-            self.run_btn.configure(state="normal", text="合成を開始")
-            self.status_label.configure(text="完了" if success else f"エラー: {message}")
+            self.run_btn.configure(state="normal", text="Start synchronization")
+            self.status_label.configure(text="Complete" if success else f"Error: {message}")
             if success:
-                messagebox.showinfo("完了", "テンプレート合成が完了しました。")
+                messagebox.showinfo("Complete", "Template synchronization completed.")
             else:
-                messagebox.showerror("エラー", f"処理中にエラーが発生しました:\n{message}")
+                messagebox.showerror("Error", f"An error occurred during processing:\n{message}")
         self.after(0, update)
 
     def _start_processing(self):
@@ -145,20 +145,20 @@ class TemplateApp(ctk.CTk):
         out_path = self.output_entry.get()
         
         if not os.path.exists(tmpl_path) or not os.path.isfile(tmpl_path):
-            messagebox.showerror("エラー", "有効なテンプレートファイルを選択してください。")
+            messagebox.showerror("Error", "Select a valid template file.")
             return
             
         if not in_path or not os.path.exists(in_path):
-            messagebox.showerror("エラー", "有効な入力ディレクトリ/ファイルを選択してください。")
+            messagebox.showerror("Error", "Select a valid source directory or file.")
             return
             
         if not out_path:
-            messagebox.showerror("エラー", "出力ディレクトリを選択してください。")
+            messagebox.showerror("Error", "Select an output directory.")
             return
             
-        self.run_btn.configure(state="disabled", text="処理中...")
+        self.run_btn.configure(state="disabled", text="Processing...")
         self.progress_bar.set(0)
-        self.status_label.configure(text="処理を準備中...")
+        self.status_label.configure(text="Preparing...")
         self.log_textbox.configure(state="normal")
         self.log_textbox.delete("1.0", "end")
         self.log_textbox.configure(state="disabled")
@@ -167,7 +167,7 @@ class TemplateApp(ctk.CTk):
         
     def _run_process_thread(self, tmpl_path, in_path, out_path):
         try:
-            self._append_log(f"テンプレート読み込み中: {tmpl_path}")
+            self._append_log(f"Loading template: {tmpl_path}")
             engine = DICOMTemplateEngine(tmpl_path)
             
             input_path = Path(in_path)
@@ -184,13 +184,13 @@ class TemplateApp(ctk.CTk):
                 
             total = len(files)
             if total == 0:
-                self._append_log("処理対象のファイルが見つかりません。")
+                self._append_log("No files were found for processing.")
                 self._processing_finished(True)
                 return
                 
             for i, file_path in enumerate(files):
                 self._update_progress(i + 1, total, file_path.name)
-                self._append_log(f"処理中: {file_path.name}")
+                self._append_log(f"Processing: {file_path.name}")
                 
                 try:
                     synced_dcm = engine.sync_from_source(
@@ -200,14 +200,14 @@ class TemplateApp(ctk.CTk):
                     )
                     output_path = output_dir / f"tmpl_{file_path.name}"
                     synced_dcm.save_as(str(output_path), write_like_original=False)
-                    self._append_log(f"  成功: -> {output_path.name}")
+                    self._append_log(f"  Success: -> {output_path.name}")
                 except Exception as e:
-                    self._append_log(f"  エラー: {e}")
+                    self._append_log(f"  Error: {e}")
                     
-            self._append_log("すべての処理が完了しました。")
+            self._append_log("All processing completed.")
             self._processing_finished(True)
         except Exception as e:
-            self._append_log(f"致命的なエラー: {str(e)}")
+            self._append_log(f"Fatal error: {str(e)}")
             self._processing_finished(False, str(e))
 
 def run_template_app():

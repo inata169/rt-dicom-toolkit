@@ -1,5 +1,5 @@
 """
-DICOM匿名化のプロファイルを定義するモジュール
+DICOM anonymization profiles.
 """
 
 import hashlib
@@ -7,17 +7,17 @@ from pydicom.uid import generate_uid
 
 def get_anonymization_profile(anonymizer):
     """
-    匿名化プロファイルを取得する
+    Return the anonymization profile.
     
     Args:
-        anonymizer: RTDicomAnonymizerインスタンス
+        anonymizer: Active RTDicomAnonymizer instance.
         
     Returns:
-        匿名化プロファイル（タグ名とその置換方法を含む辞書）
+        Mapping of DICOM keywords to replacement values or callables.
     """
-    # キーは属性のタグ、値は変換方法（値または関数）
+    # Keys are DICOM keywords; values are replacements or callables.
     return {
-        # 基本的な患者情報
+        # Basic patient information.
         "PatientName": "ANONYMOUS",
         "PatientID": lambda x: anonymizer.generate_anonymous_id(x),
         "PatientBirthDate": "19000101",
@@ -27,7 +27,7 @@ def get_anonymization_profile(anonymizer):
         "PatientAddress": "",
         "PatientTelephoneNumbers": "",
         
-        # 研究・施設情報
+        # Study and institution information.
         "StudyID": lambda x: hashlib.md5(str(x).encode()).hexdigest()[:8],
         "AccessionNumber": "",
         "InstitutionName": "ANONYMOUS_INSTITUTION",
@@ -37,13 +37,13 @@ def get_anonymization_profile(anonymizer):
         "PerformingPhysicianName": "",
         "OperatorsName": "",
         
-        # 識別子
+        # Identifiers.
         "StudyInstanceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
         "SeriesInstanceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
         "SOPInstanceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
         "FrameOfReferenceUID": lambda x: anonymizer.uid_map.setdefault(str(x), generate_uid()),
         
-        # 日付と時刻（完全に匿名化）
+        # Dates and times used by the full profile.
         "StudyDate": "20000101",
         "SeriesDate": "20000101",
         "AcquisitionDate": "20000101",
@@ -53,12 +53,12 @@ def get_anonymization_profile(anonymizer):
         "AcquisitionTime": "000000.000",
         "ContentTime": "000000.000",
         
-        # その他の識別情報
+        # Other identifying information.
         "DeviceSerialNumber": "",
         "StationName": "ANON_STATION",
-        "ManufacturerModelName": "",  # メーカー情報はそのまま残してもよい
+        "ManufacturerModelName": "",
         
-        # RT特有の属性
+        # RT-specific attributes.
         "StructureSetLabel": lambda x: f"ANONYMOUS_{str(x)[-5:]}",
         "StructureSetName": lambda x: f"ANONYMOUS_{str(x)[-5:]}",
         "ROIName": lambda x: f"ROI_{str(x)[-10:]}" if not any(organ in str(x).lower() for organ in ["lung", "heart", "liver", "kidney", "spinal", "brain"]) else str(x),

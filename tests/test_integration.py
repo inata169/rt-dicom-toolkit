@@ -6,13 +6,13 @@ from rt_dicom_toolkit.anonymizer.core import RTDicomAnonymizer
 
 
 def test_integration_anonymize(dicom_test_dir, temp_output_dir):
-    """単一ファイルを使った匿名化の統合テスト（高速版）"""
+    """Run the focused single-file anonymization integration test."""
     source_file = dicom_test_dir / "RTPLAN_PHITStest.dcm"
 
     if not source_file.exists():
         pytest.skip(f"Test file {source_file} not found")
 
-    # 1ファイルだけを temp の input_dir にコピーしてテスト
+    # Copy one fixture into the temporary input directory.
     input_dir = temp_output_dir / "input"
     input_dir.mkdir()
     shutil.copy2(source_file, input_dir / source_file.name)
@@ -27,27 +27,26 @@ def test_integration_anonymize(dicom_test_dir, temp_output_dir):
 
     anonymizer.process_directory()
 
-    # 出力ファイルが生成されていることを確認
+    # Confirm output was created.
     output_file = output_dir / source_file.name
     assert output_file.exists(), f"Output file not found at {output_file}"
 
-    # 案A: force=True で読む（非標準形式にも対応）
-    # 案B の効果として、write_like_original=False で保存されたファイルは
-    # force=False でも読めるはずだが、念のため force=True も許容する形でテスト
+    # Use force=True to support the historical non-standard fixture. Output
+    # saved with write_like_original=False should also be standard-readable.
     dcm = pydicom.dcmread(str(output_file), force=False)
 
-    # 匿名化されていることを確認
+    # Confirm configured values were anonymized.
     assert str(dcm.PatientName) == "ANONYMOUS", f"PatientName not anonymized: {dcm.PatientName}"
     assert hasattr(dcm, 'PatientID'), "PatientID missing"
     assert len(str(dcm.StationName)) <= 16 if hasattr(dcm, 'StationName') else True
 
-    # 標準 DICOM ヘッダーが付与されていることを確認（案B の効果）
+    # Confirm standard file-meta information was added.
     assert hasattr(dcm, 'file_meta'), "file_meta missing - DICOM header not written"
     assert hasattr(dcm.file_meta, 'TransferSyntaxUID'), "TransferSyntaxUID missing in file_meta"
 
 
 def test_uid_consistency(dicom_test_dir, temp_output_dir):
-    """UID一貫性モードのテスト"""
+    """Test consistent UID handling."""
     source_file = dicom_test_dir / "RTPLAN_PHITStest.dcm"
     if not source_file.exists():
         pytest.skip(f"Test file {source_file} not found")
@@ -64,5 +63,5 @@ def test_uid_consistency(dicom_test_dir, temp_output_dir):
 
     anonymizer.process_directory()
 
-    # uid_map が作成されていることを確認
+    # Confirm that a UID map was created.
     assert len(anonymizer.uid_map) > 0, "uid_map should be populated in consistent mode"

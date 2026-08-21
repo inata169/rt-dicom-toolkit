@@ -1,17 +1,17 @@
 """
-DICOM匿名化検証のルールを定義するモジュール
+DICOM anonymization validation rules.
 """
 
 class ValidationRules:
-    """匿名化検証ルールを定義するクラス"""
+    """Define the DICOM anonymization validation rules."""
     
     def __init__(self):
-        """検証ルールの初期化"""
+        """Initialize validation rules."""
         self.define_validation_rules()
     
     def define_validation_rules(self):
-        """検証ルールを定義する"""
-        # 必ず匿名化されるべきタグのリスト
+        """Populate tag groups used by the validator."""
+        # Attributes that must be anonymized.
         self.must_anonymize_tags = [
             "PatientName",
             "PatientID",
@@ -27,7 +27,7 @@ class ValidationRules:
             "OperatorsName"
         ]
         
-        # UIDタグのリスト
+        # UID attributes.
         self.uid_tags = [
             "StudyInstanceUID",
             "SeriesInstanceUID",
@@ -35,7 +35,7 @@ class ValidationRules:
             "FrameOfReferenceUID"
         ]
         
-        # データの構造が保持されるべきタグのリスト
+        # Attributes that should preserve data structure.
         self.structure_tags = [
             "Modality",
             "SOPClassUID",
@@ -49,7 +49,7 @@ class ValidationRules:
             "NumberOfFrames"
         ]
         
-        # 匿名化されるかどうかオプションのタグ
+        # Attributes whose handling depends on the selected level.
         self.optional_anonymize_tags = [
             "StudyDate",
             "SeriesDate",
@@ -69,7 +69,7 @@ class ValidationRules:
             "DeviceSerialNumber"
         ]
         
-        # RT構造特有のタグ
+        # RT-specific attributes.
         self.rt_specific_tags = [
             "StructureSetLabel",
             "StructureSetName",

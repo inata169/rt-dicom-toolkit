@@ -1,5 +1,5 @@
 """
-DICOM関連のユーティリティ関数を提供するモジュール
+DICOM utility functions.
 """
 
 import pydicom
@@ -8,18 +8,18 @@ from pathlib import Path
 
 def get_dicom_info(file_path):
     """
-    DICOMファイルの基本情報を取得
+    Return basic information for a DICOM file.
     
     Args:
-        file_path: DICOMファイルのパス
+        file_path: Path to the DICOM file.
         
     Returns:
-        基本情報を含む辞書、DICOMファイルでない場合はNone
+        A dictionary of basic attributes, or None when reading fails.
     """
     try:
         dcm = pydicom.dcmread(str(file_path), force=True)
         
-        # 基本情報を抽出
+        # Extract basic attributes.
         info = {}
         for tag in ['Modality', 'PatientID', 'PatientName', 'StudyDate', 'SeriesDescription']:
             if hasattr(dcm, tag):
@@ -27,7 +27,7 @@ def get_dicom_info(file_path):
             else:
                 info[tag] = None
         
-        # ファイルパス情報を追加
+        # Add file-path information.
         info['FilePath'] = str(file_path)
         info['FileName'] = Path(file_path).name
         
@@ -37,13 +37,13 @@ def get_dicom_info(file_path):
 
 def is_dicom_file(file_path):
     """
-    ファイルがDICOMファイルかどうかを判定
+    Return whether a file can be read as standard DICOM.
     
     Args:
-        file_path: 判定するファイルのパス
+        file_path: Path to inspect.
         
     Returns:
-        DICOMファイルの場合はTrue、そうでなければFalse
+        True for readable DICOM; otherwise False.
     """
     try:
         pydicom.dcmread(str(file_path), force=False, stop_before_pixels=True)
@@ -53,13 +53,13 @@ def is_dicom_file(file_path):
 
 def get_dicom_modality(file_path):
     """
-    DICOMファイルのモダリティを取得
+    Return the DICOM Modality value.
     
     Args:
-        file_path: DICOMファイルのパス
+        file_path: Path to the DICOM file.
         
     Returns:
-        モダリティの文字列、取得できない場合は'Unknown'
+        Modality string, or 'Unknown' when unavailable.
     """
     try:
         dcm = pydicom.dcmread(str(file_path), force=True, stop_before_pixels=True)
@@ -71,27 +71,27 @@ def get_dicom_modality(file_path):
 
 def get_dicom_description(file_path):
     """
-    DICOMファイルの説明を取得（モダリティベースの一般的な説明）
+    Return a general description based on Modality.
     
     Args:
-        file_path: DICOMファイルのパス
+        file_path: Path to the DICOM file.
         
     Returns:
-        ファイルタイプの説明文字列
+        Human-readable file-type description.
     """
     modality = get_dicom_modality(file_path)
     
     if modality == 'RTPLAN':
-        return '放射線治療計画'
+        return 'Radiotherapy plan'
     elif modality == 'RTDOSE':
-        return '線量分布'
+        return 'Dose distribution'
     elif modality == 'RTSTRUCT':
-        return '臓器輪郭'
+        return 'Structure contours'
     elif modality == 'CT':
-        return 'CT画像'
+        return 'CT image'
     elif modality == 'RTIMAGE':
-        return '治療画像'
+        return 'Treatment image'
     elif modality == 'MR':
-        return 'MR画像'
+        return 'MR image'
     else:
-        return f'{modality}ファイル'
+        return f'{modality} file'

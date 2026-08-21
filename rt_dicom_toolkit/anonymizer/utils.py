@@ -1,5 +1,5 @@
 """
-匿名化に関連するユーティリティ関数
+Utilities for anonymization.
 """
 
 import hashlib
@@ -8,43 +8,43 @@ from pydicom.uid import generate_uid
 
 def generate_uid_from_string(input_str):
     """
-    文字列から一貫したUIDを生成する
+    Generate a deterministic UID from a string.
     
     Args:
-        input_str: 入力文字列
+        input_str: Input value.
         
     Returns:
-        DICOM形式のUID
+        DICOM-formatted UID.
     """
-    # 入力文字列からハッシュを生成
+    # Hash the input string.
     hash_obj = hashlib.md5(str(input_str).encode())
     hash_hex = hash_obj.hexdigest()
     
-    # 2.25.でDICOM UIDを始める（Antropacユーザー領域）
+    # Use the UUID-derived 2.25 UID root.
     uid = "2.25." + str(int(hash_hex, 16) % 10**38)
     
-    return uid[:64]  # UIDは最大64文字
+    return uid[:64]  # A DICOM UID is limited to 64 characters.
 
 def generate_anonymous_patient_id(original_id, prefix="ANO", method="hash"):
     """
-    匿名化された患者IDを生成する
+    Generate an anonymized patient ID.
     
     Args:
-        original_id: 元の患者ID
-        prefix: 匿名化IDの接頭辞
-        method: 'hash'または'uuid'
+        original_id: Original patient ID.
+        prefix: Anonymized-ID prefix.
+        method: Either 'hash' or 'uuid'.
         
     Returns:
-        匿名化された患者ID
+        Anonymized patient ID.
     """
     if method == "hash":
-        # MD5ハッシュを使用して短いIDを生成
+        # Generate a short deterministic value from the MD5 digest.
         hash_obj = hashlib.md5(str(original_id).encode())
         hash_hex = hash_obj.hexdigest()
         return f"{prefix}{hash_hex[:8]}"
     elif method == "uuid":
-        # UUIDの一部を使用
+        # Use part of a newly generated UUID.
         short_uuid = str(uuid.uuid4()).replace('-', '')[:8]
         return f"{prefix}{short_uuid}"
     else:
-        raise ValueError(f"不明な生成方法: {method}")
+        raise ValueError(f"Unknown generation method: {method}")

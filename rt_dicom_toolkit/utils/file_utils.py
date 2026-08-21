@@ -1,5 +1,5 @@
 """
-ファイル操作に関連するユーティリティ関数を提供するモジュール
+File and directory utilities.
 """
 
 import os
@@ -9,63 +9,62 @@ from pathlib import Path
 
 def find_dicom_files(directory):
     """
-    ディレクトリ内のDICOMファイルを再帰的に検索
+    Recursively find readable DICOM files.
     
     Args:
-        directory: 検索するディレクトリのパス
+        directory: Directory to search.
         
     Returns:
-        DICOMファイルのパスのリスト
+        List of DICOM file paths.
     """
     dicom_files = []
     for root, _, files in os.walk(directory):
         for file in files:
             file_path = Path(root) / file
             
-            # 非DICOM拡張子をスキップ
+            # Skip known non-DICOM extensions.
             if file_path.suffix.lower() in ['.lnk', '.ini', '.txt', '.log']:
                 continue
                 
             try:
-                # DICOMファイルとして読み込めるか確認
+                # Check whether pydicom can read the file.
                 dcm = pydicom.dcmread(str(file_path), force=True, stop_before_pixels=True)
                 
-                # DICOMファイルの判定条件を緩和
-                # SOPClassUIDがなくても、他の一般的なDICOMタグがあればDICOMファイルとみなす
+                # Accept files that contain other common DICOM attributes even
+                # when SOPClassUID is absent.
                 is_dicom = False
                 
-                # SOPClassUIDがあればDICOMファイル
+                # SOP Class UID is the strongest signal.
                 if hasattr(dcm, 'SOPClassUID'):
                     is_dicom = True
-                # モダリティがあればDICOMファイル
+                # Modality is also a useful signal.
                 elif hasattr(dcm, 'Modality'):
                     is_dicom = True
-                # 患者IDがあればDICOMファイル
+                # Patient ID is accepted for legacy non-standard input.
                 elif hasattr(dcm, 'PatientID'):
                     is_dicom = True
-                # 少なくとも5つ以上のDICOMタグがあればDICOMファイルとみなす
+                # Fall back to a minimum number of DICOM data elements.
                 elif len(dcm) >= 5:
                     is_dicom = True
                 
                 if is_dicom:
                     dicom_files.append(file_path)
             except Exception as e:
-                # エラーの詳細をログに出力（デバッグ用）
-                # print(f"ファイル読み込みエラー: {file_path} - {e}")
+                # A caller may add focused diagnostics when required.
                 pass
     
     return dicom_files
 
 def get_relative_path(file_path, base_dir):
     """
-    ベースディレクトリからの相対パスを取得
+    Return a path relative to a base directory when possible.
     
     Args:
-        file_path: ファイルの絶対パス
-        base_dir: ベースディレクトリ
+        file_path: File path.
+        base_dir: Base directory.
         
     Returns:
-        ベースディレクトリからの相対パス
+        Relative path, or the file name when it is outside the base.
     """
     file_path = Path(file_path)
     base_dir = Path(base_dir)
@@ -77,13 +76,13 @@ def get_relative_path(file_path, base_dir):
 
 def ensure_directory_exists(directory_path):
     """
-    ディレクトリが存在するかを確認し、存在しなければ作成
+    Create a directory when it does not exist.
     
     Args:
-        directory_path: 作成するディレクトリのパス
+        directory_path: Directory path to create.
         
     Returns:
-        作成されたディレクトリのPathオブジェクト
+        Created or existing Path object.
     """
     path = Path(directory_path)
     path.mkdir(parents=True, exist_ok=True)
@@ -91,22 +90,22 @@ def ensure_directory_exists(directory_path):
 
 def copy_directory_structure(src_dir, dst_dir):
     """
-    ソースディレクトリの構造をコピー（ファイルはコピーしない）
+    Copy a directory tree without copying files.
     
     Args:
-        src_dir: コピー元ディレクトリ
-        dst_dir: コピー先ディレクトリ
+        src_dir: Source directory.
+        dst_dir: Destination directory.
         
     Returns:
-        作成されたディレクトリの数
+        Number of created directories.
     """
     src_dir = Path(src_dir)
     dst_dir = Path(dst_dir)
     
-    # コピー先ディレクトリを作成
+    # Create the destination root.
     dst_dir.mkdir(parents=True, exist_ok=True)
     
-    # サブディレクトリを再帰的に作成
+    # Recreate subdirectories recursively.
     created_dirs = 0
     for root, dirs, _ in os.walk(src_dir):
         for dir_name in dirs:
@@ -121,48 +120,48 @@ def copy_directory_structure(src_dir, dst_dir):
 
 def compare_directory_structure(original_dir, anonymized_dir, log_func=print):
     """
-    2つのディレクトリの構造を比較し、詳細なレポートを生成
+    Compare two directory trees and return a summary.
     
     Args:
-        original_dir: 原本ディレクトリ
-        anonymized_dir: 匿名化ディレクトリ
-        log_func: ログ出力関数
+        original_dir: Original directory.
+        anonymized_dir: Anonymized directory.
+        log_func: Function used for progress messages.
         
     Returns:
-        比較結果を含む辞書
+        Dictionary containing comparison results.
     """
     original_dir = Path(original_dir)
     anonymized_dir = Path(anonymized_dir)
     
     if not original_dir.exists() or not anonymized_dir.exists():
-        log_func("指定されたディレクトリが存在しません。")
-        return {"summary": ["指定されたディレクトリが存在しません。"]}
+        log_func("One or both specified directories do not exist.")
+        return {"summary": ["One or both specified directories do not exist."]}
     
-    # ファイル数をカウント
+    # Count DICOM files.
     original_files = find_dicom_files(original_dir)
     anonymized_files = find_dicom_files(anonymized_dir)
     
-    log_func(f"原本ディレクトリのDICOMファイル数: {len(original_files)}")
-    log_func(f"匿名化ディレクトリのDICOMファイル数: {len(anonymized_files)}")
+    log_func(f"DICOM files in original directory: {len(original_files)}")
+    log_func(f"DICOM files in anonymized directory: {len(anonymized_files)}")
     
-    # 結果を格納
+    # Build the summary.
     summary = []
-    summary.append("=== ディレクトリ比較結果 ===")
-    summary.append(f"原本ディレクトリ: {original_dir}")
-    summary.append(f"匿名化ディレクトリ: {anonymized_dir}")
-    summary.append(f"原本DICOMファイル数: {len(original_files)}")
-    summary.append(f"匿名化DICOMファイル数: {len(anonymized_files)}")
+    summary.append("=== Directory comparison ===")
+    summary.append(f"Original directory: {original_dir}")
+    summary.append(f"Anonymized directory: {anonymized_dir}")
+    summary.append(f"Original DICOM files: {len(original_files)}")
+    summary.append(f"Anonymized DICOM files: {len(anonymized_files)}")
     
     if len(original_files) == len(anonymized_files):
-        summary.append("\n✅ ファイル数一致: 原本と匿名化ファイルの数が一致しています。")
+        summary.append("\n✅ File counts match.")
     else:
-        summary.append("\n⚠️ ファイル数不一致: 原本と匿名化ファイルの数が一致していません。")
+        summary.append("\n⚠️ File counts do not match.")
         if len(original_files) > len(anonymized_files):
-            summary.append(f"  不足ファイル数: {len(original_files) - len(anonymized_files)}")
+            summary.append(f"  Missing files: {len(original_files) - len(anonymized_files)}")
         else:
-            summary.append(f"  過剰ファイル数: {len(anonymized_files) - len(original_files)}")
+            summary.append(f"  Extra files: {len(anonymized_files) - len(original_files)}")
     
-    # モダリティの分布を取得
+    # Collect Modality distributions.
     original_modalities = {}
     anonymized_modalities = {}
     
@@ -190,8 +189,8 @@ def compare_directory_structure(original_dir, anonymized_dir, log_func=print):
         except:
             pass
     
-    # モダリティ分布をサマリーに追加
-    summary.append("\n=== モダリティ分布 ===")
+    # Add Modality distributions to the summary.
+    summary.append("\n=== Modality distribution ===")
     modalities = list(set(list(original_modalities.keys()) + list(anonymized_modalities.keys())))
     original_counts = [original_modalities.get(m, 0) for m in modalities]
     anonymized_counts = [anonymized_modalities.get(m, 0) for m in modalities]
@@ -200,7 +199,7 @@ def compare_directory_structure(original_dir, anonymized_dir, log_func=print):
         orig_count = original_modalities.get(modality, 0)
         anon_count = anonymized_modalities.get(modality, 0)
         status = "✅" if orig_count == anon_count else "⚠️"
-        summary.append(f"{status} {modality}: 原本 {orig_count}, 匿名化 {anon_count}")
+        summary.append(f"{status} {modality}: original {orig_count}, anonymized {anon_count}")
     
     return {
         "summary": summary,
