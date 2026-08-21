@@ -111,7 +111,7 @@ To uninstall the offline toolkit:
 1. Close every RT DICOM Toolkit window.
 2. Move any files that must be retained out of the extracted `data` directory.
 3. Check whether `.runtime\python.exe` exists in the extracted folder. If it
-   does, open **Windows Settings > Apps > Installed apps** and uninstall the
+   does, open **Windows Settings > Apps > Apps & features** and uninstall the
    **Python 3.12.10 (64-bit)** entry that was installed with this bundle. Do not
    remove an existing Python installation when the bundle has no `.runtime`.
 4. Delete only the verified extracted bundle folder. This removes the toolkit,

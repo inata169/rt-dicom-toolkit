@@ -177,7 +177,7 @@ For a completely clean reinstall or removal, first close every toolkit window
 and move the extracted `data` directory to an approved secure location if it
 must be retained. If `.runtime\python.exe` exists, the bundle installed a
 private Python runtime that is also registered with Windows. Open **Windows
-Settings > Apps > Installed apps** and uninstall the **Python 3.12.10 (64-bit)**
+Settings > Apps > Apps & features** and uninstall the **Python 3.12.10 (64-bit)**
 entry associated with this bundle before deleting files. If `.runtime` does not
 exist, do not remove the compatible Python installation that was already on the
 computer.
