@@ -94,7 +94,7 @@ for a normal installation.
    `rt-dicom-toolkit-offline-win64-<version>.zip` from
    [GitHub Releases](https://github.com/inata169/rt-dicom-toolkit/releases).
 2. Verify the ZIP's SHA-256 value against the checksum in its release notes.
-3. Copy the ZIP to the offline Windows 10 x64 computer.
+3. Copy the ZIP to the offline Windows 10/11 x64 computer.
 4. Extract it to a writable local folder. Do not run the installer directly
    from the ZIP or extract and install it on USB media.
 5. Double-click `install_offline.bat`. It verifies the bundled files, creates a
@@ -111,9 +111,10 @@ To uninstall the offline toolkit:
 1. Close every RT DICOM Toolkit window.
 2. Move any files that must be retained out of the extracted `data` directory.
 3. Check whether `.runtime\python.exe` exists in the extracted folder. If it
-   does, open **Windows Settings > Apps > Apps & features** and uninstall the
-   **Python 3.12.10 (64-bit)** entry that was installed with this bundle. Do not
-   remove an existing Python installation when the bundle has no `.runtime`.
+   does, open **Windows Settings > Apps > Apps & features** on Windows 10 or
+   **Windows Settings > Apps > Installed apps** on Windows 11, then uninstall
+   the **Python 3.12.10 (64-bit)** entry that was installed with this bundle. Do
+   not remove an existing Python installation when the bundle has no `.runtime`.
 4. Delete only the verified extracted bundle folder. This removes the toolkit,
    its dedicated virtual environment, and the remaining bundled files.
 

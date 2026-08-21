@@ -11,7 +11,10 @@ Additional documentation:
 - [`windows_offline_installation.md`](windows_offline_installation.md): build
   and use the Windows x64 offline bundle;
 - [`windows_offline_installation_validation_2026-08-10.md`](windows_offline_installation_validation_2026-08-10.md):
-  recorded validation of the offline workflow.
+  recorded Windows 10 validation of the offline workflow;
+- [`windows_offline_installation_validation_2026-08-21.md`](windows_offline_installation_validation_2026-08-21.md):
+  recorded human-observed Windows 11 installation, launch, and anonymizer
+  validation for release `v0.0.0`.
 
 Development and safety guidance:
 

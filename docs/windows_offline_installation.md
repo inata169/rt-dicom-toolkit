@@ -1,6 +1,6 @@
-# Windows 10 Offline Installation
+# Windows 10/11 Offline Installation
 
-This procedure installs RT DICOM Toolkit on a Windows 10 x64 computer without
+This procedure installs RT DICOM Toolkit on a Windows 10/11 x64 computer without
 internet access by using USB storage. Do not use patient-derived DICOM for
 installation validation. The bundled smoke test generates synthetic DICOM at
 runtime.
@@ -9,7 +9,7 @@ runtime.
 
 - Online computer: Windows 10/11 x64, PowerShell 5.1 or later, CPython 3.12 x64,
   and pip.
-- Offline computer: Windows 10 x64.
+- Offline computer: Windows 10/11 x64.
 - Bundled Python: CPython 3.12.10 x64.
 - Installation location: a dedicated `.venv` inside the locally extracted
   bundle.
@@ -177,7 +177,8 @@ For a completely clean reinstall or removal, first close every toolkit window
 and move the extracted `data` directory to an approved secure location if it
 must be retained. If `.runtime\python.exe` exists, the bundle installed a
 private Python runtime that is also registered with Windows. Open **Windows
-Settings > Apps > Apps & features** and uninstall the **Python 3.12.10 (64-bit)**
+Settings > Apps > Apps & features** on Windows 10 or **Windows Settings > Apps >
+Installed apps** on Windows 11, then uninstall the **Python 3.12.10 (64-bit)**
 entry associated with this bundle before deleting files. If `.runtime` does not
 exist, do not remove the compatible Python installation that was already on the
 computer.
