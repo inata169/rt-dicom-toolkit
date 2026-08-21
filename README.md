@@ -96,7 +96,7 @@ for a normal installation.
 2. Verify the ZIP's SHA-256 value against the checksum in its release notes.
 3. Copy the ZIP to the offline Windows 10/11 x64 computer.
 4. Extract it to a writable local folder. Do not run the installer directly
-   from the ZIP or from read-only USB media.
+   from the ZIP or extract and install it on USB media.
 5. Double-click `install_offline.bat`. It verifies the bundled files, creates a
    dedicated `.venv`, installs only from the bundled wheels, and runs a
    synthetic-DICOM smoke test.
@@ -110,8 +110,12 @@ To uninstall the offline toolkit:
 
 1. Close every RT DICOM Toolkit window.
 2. Move any files that must be retained out of the extracted `data` directory.
-3. Delete only the verified extracted bundle folder. This removes the dedicated
-   virtual environment and any private Python runtime installed inside it.
+3. Check whether `.runtime\python.exe` exists in the extracted folder. If it
+   does, open **Windows Settings > Apps > Installed apps** and uninstall the
+   **Python 3.12.10 (64-bit)** entry that was installed with this bundle. Do not
+   remove an existing Python installation when the bundle has no `.runtime`.
+4. Delete only the verified extracted bundle folder. This removes the toolkit,
+   its dedicated virtual environment, and the remaining bundled files.
 
 The installer does not add the toolkit to `PATH`, create shortcuts, or register
 file associations. Output directories selected outside the extracted bundle,

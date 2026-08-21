@@ -173,6 +173,15 @@ directory's `data`. If that destination already exists, it is moved to
 `data\legacy-venv-data`. If the backup destination also exists, installation
 stops instead of deleting data.
 
-For a completely clean reinstall, first move the extracted `data` directory to
-an approved secure location. Then remove only the verified extracted bundle
-folder and extract the original ZIP into a new local folder.
+For a completely clean reinstall or removal, first close every toolkit window
+and move the extracted `data` directory to an approved secure location if it
+must be retained. If `.runtime\python.exe` exists, the bundle installed a
+private Python runtime that is also registered with Windows. Open **Windows
+Settings > Apps > Installed apps** and uninstall the **Python 3.12.10 (64-bit)**
+entry associated with this bundle before deleting files. If `.runtime` does not
+exist, do not remove the compatible Python installation that was already on the
+computer.
+
+Finally, remove only the verified extracted bundle folder. For a reinstall,
+extract the original ZIP into a new writable local-disk folder. Output folders
+selected outside the bundle are not removed by this process.
