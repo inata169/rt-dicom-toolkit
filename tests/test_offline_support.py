@@ -29,6 +29,23 @@ def test_documented_python_minimum_matches_package_metadata():
         assert "Python 3.6" not in readme
 
 
+def test_offline_bundle_documentation_matches_package_version():
+    setup_text = (ROOT / "setup.py").read_text(encoding="utf-8")
+    version_match = re.search(r'version="(\d+\.\d+\.\d+)"', setup_text)
+    assert version_match is not None
+
+    expected_zip = (
+        f"rt-dicom-toolkit-offline-win64-{version_match.group(1)}.zip"
+    )
+    installation_guide = (
+        ROOT / "docs" / "windows_offline_installation.md"
+    ).read_text(encoding="utf-8")
+    handover = (ROOT / "99-handover_context.md").read_text(encoding="utf-8")
+
+    assert expected_zip in installation_guide
+    assert expected_zip in handover
+
+
 def test_offline_lock_is_complete_and_exact():
     lock_path = ROOT / "requirements" / "offline-win64-py312.txt"
     requirements = [

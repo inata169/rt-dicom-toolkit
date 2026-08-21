@@ -43,7 +43,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\prepare_offline_bund
 Output:
 
 ```text
-dist\rt-dicom-toolkit-offline-win64-1.0.0.zip
+dist\rt-dicom-toolkit-offline-win64-0.0.0.zip
 ```
 
 The script:
@@ -66,13 +66,13 @@ itself requires comparison with the separately recorded hash.
 Copy this file:
 
 ```text
-dist\rt-dicom-toolkit-offline-win64-1.0.0.zip
+dist\rt-dicom-toolkit-offline-win64-0.0.0.zip
 ```
 
 When practical, verify the copied ZIP:
 
 ```powershell
-Get-FileHash .\rt-dicom-toolkit-offline-win64-1.0.0.zip -Algorithm SHA256
+Get-FileHash .\rt-dicom-toolkit-offline-win64-0.0.0.zip -Algorithm SHA256
 ```
 
 Patient DICOM and local `DICOM/` or `DICOM_LOGS/` directories are not included.
