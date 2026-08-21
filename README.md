@@ -85,8 +85,47 @@ python -m pip install -r rt_dicom_toolkit/requirements.txt
 python -m pip install -e .
 ```
 
-For a network-isolated Windows installation, see
-[`docs/windows_offline_installation.md`](docs/windows_offline_installation.md).
+### Offline installation on Windows
+
+The offline bundle is self-contained and does not require administrator access
+for a normal installation.
+
+1. On an internet-connected computer, download
+   `rt-dicom-toolkit-offline-win64-<version>.zip` from
+   [GitHub Releases](https://github.com/inata169/rt-dicom-toolkit/releases).
+2. Verify the ZIP's SHA-256 value against the checksum in its release notes.
+3. Copy the ZIP to the offline Windows 10/11 x64 computer.
+4. Extract it to a writable local folder. Do not run the installer directly
+   from the ZIP or extract and install it on USB media.
+5. Double-click `install_offline.bat`. It verifies the bundled files, creates a
+   dedicated `.venv`, installs only from the bundled wheels, and runs a
+   synthetic-DICOM smoke test.
+
+To start the installed toolkit, double-click
+`start_rt_dicom_toolkit.bat` in the extracted folder. Keep that folder in
+place while using the application. Its `data` directory contains the default
+input, output, log, and report locations.
+
+To uninstall the offline toolkit:
+
+1. Close every RT DICOM Toolkit window.
+2. Move any files that must be retained out of the extracted `data` directory.
+3. Check whether `.runtime\python.exe` exists in the extracted folder. If it
+   does, open **Windows Settings > Apps > Apps & features** on Windows 10 or
+   **Windows Settings > Apps > Installed apps** on Windows 11, then uninstall
+   the **Python 3.12.10 (64-bit)** entry that was installed with this bundle. Do
+   not remove an existing Python installation when the bundle has no `.runtime`.
+4. Delete only the verified extracted bundle folder. This removes the toolkit,
+   its dedicated virtual environment, and the remaining bundled files.
+
+The installer does not add the toolkit to `PATH`, create shortcuts, or register
+file associations. Output directories selected outside the extracted bundle,
+such as a user-selected external output directory, are not removed during
+uninstallation.
+
+For checksum commands, reinstall instructions, troubleshooting, and the full
+offline procedure, see the
+[Windows offline installation guide](docs/windows_offline_installation.md).
 
 ## Testing
 
