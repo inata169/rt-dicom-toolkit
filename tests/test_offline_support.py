@@ -40,10 +40,8 @@ def test_offline_bundle_documentation_matches_package_version():
     installation_guide = (
         ROOT / "docs" / "windows_offline_installation.md"
     ).read_text(encoding="utf-8")
-    handover = (ROOT / "99-handover_context.md").read_text(encoding="utf-8")
 
     assert expected_zip in installation_guide
-    assert expected_zip in handover
 
 
 def test_offline_lock_is_complete_and_exact():

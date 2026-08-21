@@ -23,7 +23,7 @@
 
 - **Tests:** all 17 passed with
   `python -m pytest -p no:cacheprovider --basetemp C:\tmp\rt-dicom-toolkit-pytest-eod-20260810 tests/`.
-- **Distribution ZIP:** `dist\rt-dicom-toolkit-offline-win64-0.0.0.zip`
+- **Distribution ZIP:** `dist\rt-dicom-toolkit-offline-win64-1.0.0.zip`
 - **SHA-256:** `BB4912E2286ED60ED1ADE7AEE9A86B00F09B4BEEB5DBE3DF7D86AD71ECA8E642`
 - **Git exclusions:** `dist/`, wheels, Python runtimes, and validation temporary
   directories are not pushed to GitHub.
