@@ -94,7 +94,7 @@ for a normal installation.
    `rt-dicom-toolkit-offline-win64-<version>.zip` from
    [GitHub Releases](https://github.com/inata169/rt-dicom-toolkit/releases).
 2. Verify the ZIP's SHA-256 value against the checksum in its release notes.
-3. Copy the ZIP to the offline Windows 10/11 x64 computer.
+3. Copy the ZIP to the offline Windows 10 x64 computer.
 4. Extract it to a writable local folder. Do not run the installer directly
    from the ZIP or extract and install it on USB media.
 5. Double-click `install_offline.bat`. It verifies the bundled files, creates a
