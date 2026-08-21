@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-検証モジュールのエントリーポイント
+Entry point for the validator package.
 """
 
 from .core import RTDicomValidator
 import sys
 
 def main():
-    """検証モジュールのメイン関数"""
-    print("RT DICOM Validator モジュール")
-    print("このモジュールはCLIまたはGUIから使用してください")
-    print("GUIを起動するには:")
+    """Display validator entry-point guidance."""
+    print("RT DICOM Validator module")
+    print("Use this module through the CLI or GUI.")
+    print("To launch the GUI:")
     print("  python -m rt_dicom_toolkit.gui validator")
 
 if __name__ == "__main__":

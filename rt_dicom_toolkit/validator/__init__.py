@@ -1,5 +1,5 @@
 """
-DICOM匿名化検証機能を提供するモジュール
+DICOM anonymization validation package.
 """
 
 from .core import RTDicomValidator

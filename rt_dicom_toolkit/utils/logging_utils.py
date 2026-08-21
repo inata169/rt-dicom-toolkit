@@ -1,5 +1,5 @@
 """
-ロギング機能に関連するユーティリティ関数を提供するモジュール
+Logging utilities.
 """
 
 import logging
@@ -9,33 +9,33 @@ from pathlib import Path
 
 def setup_logger(name, level=logging.INFO, log_file=None):
     """
-    ロガーをセットアップする
+    Configure and return a logger.
     
     Args:
-        name: ロガーの名前
-        level: ログレベル
-        log_file: ログファイルのパス（省略可）
+        name: Logger name.
+        level: Logging level.
+        log_file: Optional log-file path.
         
     Returns:
-        設定されたロガーのインスタンス
+        Configured logger.
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
     
-    # 古いハンドラを削除（重複防止）
+    # Remove existing handlers to prevent duplicate output.
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
     
-    # コンソールハンドラー
+    # Console handler.
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(level)
     console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
     
-    # ファイルハンドラー（指定されている場合）
+    # Optional file handler.
     if log_file:
-        # ディレクトリを確保
+        # Ensure the destination directory exists.
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         
@@ -49,31 +49,31 @@ def setup_logger(name, level=logging.INFO, log_file=None):
 
 def get_log_filename(prefix, extension='log'):
     """
-    タイムスタンプ付きのログファイル名を生成
+    Generate a timestamped log-file name.
     
     Args:
-        prefix: ファイル名の接頭辞
-        extension: ファイル拡張子
+        prefix: File-name prefix.
+        extension: File extension.
         
     Returns:
-        タイムスタンプ付きのファイル名
+        Timestamped file name.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"{prefix}_{timestamp}.{extension}"
 
 def add_file_handler(logger, log_file, level=logging.INFO):
     """
-    既存のロガーにファイルハンドラーを追加
+    Add a file handler to an existing logger.
     
     Args:
-        logger: ロガーインスタンス
-        log_file: ログファイルのパス
-        level: ログレベル
+        logger: Logger instance.
+        log_file: Log-file path.
+        level: Logging level.
         
     Returns:
-        追加されたファイルハンドラー
+        Added file handler.
     """
-    # ディレクトリを確保
+    # Ensure the destination directory exists.
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     

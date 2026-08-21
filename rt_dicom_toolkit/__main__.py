@@ -2,25 +2,25 @@
 # -*- coding: utf-8 -*-
 
 """
-RT DICOM Toolkitのメインエントリーポイント
+Main entry point for RT DICOM Toolkit.
 """
 
 import sys
 
 def main():
-    """メインエントリーポイント"""
+    """Launch the GUI without arguments or dispatch to the CLI."""
     if len(sys.argv) == 1:
-        # 引数なしの場合はGUI起動
+        # Launch the GUI when no arguments are supplied.
         from .gui import run_app
         run_app()
     else:
-        # 引数がある場合はCLIへ委譲
+        # Delegate argument-based use to the CLI.
         from .cli import run_anonymizer_cli, run_validator_cli, run_template_cli
         if sys.argv[1] == 'validate':
             sys.argv.pop(1)
             run_validator_cli()
         elif sys.argv[1] == 'template':
-            # run_template_cli()内でsys.argv[2:]をパースする
+            # run_template_cli() parses sys.argv[2:].
             run_template_cli()
         else:
             run_anonymizer_cli()

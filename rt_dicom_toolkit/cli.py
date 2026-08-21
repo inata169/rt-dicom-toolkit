@@ -1,5 +1,5 @@
 """
-RT DICOM Toolkit のコマンドラインインターフェイス
+Command-line interface for RT DICOM Toolkit.
 """
 
 import argparse
@@ -13,15 +13,15 @@ from .config import (
 )
 
 def run_anonymizer_cli():
-    """匿名化ツールのCLIエントリーポイント"""
-    parser = argparse.ArgumentParser(description='RT DICOM匿名化ツール')
-    parser.add_argument('--input', help='入力ディレクトリのパス', default=str(DEFAULT_INPUT_DIR))
-    parser.add_argument('--output', help='出力ディレクトリのパス', default=str(DEFAULT_ANONYMOUS_DIR))
-    parser.add_argument('--log', help='ログディレクトリのパス', default=str(DEFAULT_LOG_DIR))
+    """Run the anonymizer CLI."""
+    parser = argparse.ArgumentParser(description='RT DICOM anonymizer')
+    parser.add_argument('--input', help='Input directory path', default=str(DEFAULT_INPUT_DIR))
+    parser.add_argument('--output', help='Output directory path', default=str(DEFAULT_ANONYMOUS_DIR))
+    parser.add_argument('--log', help='Log directory path', default=str(DEFAULT_LOG_DIR))
     parser.add_argument('--level', choices=['full', 'partial'], default='full',
-                       help='匿名化レベル: full=完全匿名化, partial=部分匿名化')
+                       help='Anonymization level: full or partial')
     parser.add_argument('--private', choices=['remove', 'keep'], default='remove',
-                       help='プライベートタグの処理: remove=削除, keep=保持')
+                       help='Private-tag handling: remove or keep')
     args = parser.parse_args()
     
     anonymizer = RTDicomAnonymizer()
@@ -29,22 +29,22 @@ def run_anonymizer_cli():
     anonymizer.output_dir = Path(args.output)
     anonymizer.log_dir = Path(args.log)
     
-    # 設定を適用
+    # Apply the selected settings.
     anonymizer.anonymization_level = args.level
     anonymizer.private_tags = args.private
     
-    print(f"入力ディレクトリ: {anonymizer.input_dir}")
-    print(f"出力ディレクトリ: {anonymizer.output_dir}")
-    print(f"ログディレクトリ: {anonymizer.log_dir}")
+    print(f"Input directory: {anonymizer.input_dir}")
+    print(f"Output directory: {anonymizer.output_dir}")
+    print(f"Log directory: {anonymizer.log_dir}")
     
     anonymizer.process_directory()
 
 def run_validator_cli():
-    """検証ツールのCLIエントリーポイント"""
-    parser = argparse.ArgumentParser(description='RT DICOM匿名化検証ツール')
-    parser.add_argument('--original', help='原本DICOMディレクトリのパス', default=str(DEFAULT_INPUT_DIR))
-    parser.add_argument('--anonymized', help='匿名化DICOMディレクトリのパス', default=str(DEFAULT_ANONYMOUS_DIR))
-    parser.add_argument('--report', help='レポート出力ディレクトリのパス', default=str(DEFAULT_REPORT_DIR))
+    """Run the validator CLI."""
+    parser = argparse.ArgumentParser(description='RT DICOM anonymization validator')
+    parser.add_argument('--original', help='Original DICOM directory path', default=str(DEFAULT_INPUT_DIR))
+    parser.add_argument('--anonymized', help='Anonymized DICOM directory path', default=str(DEFAULT_ANONYMOUS_DIR))
+    parser.add_argument('--report', help='Report output directory path', default=str(DEFAULT_REPORT_DIR))
     args = parser.parse_args()
     
     validator = RTDicomValidator()
@@ -52,20 +52,20 @@ def run_validator_cli():
     validator.anonymized_dir = Path(args.anonymized)
     validator.report_dir = Path(args.report)
     
-    print(f"原本ディレクトリ: {validator.original_dir}")
-    print(f"匿名化ディレクトリ: {validator.anonymized_dir}")
-    print(f"レポートディレクトリ: {validator.report_dir}")
+    print(f"Original directory: {validator.original_dir}")
+    print(f"Anonymized directory: {validator.anonymized_dir}")
+    print(f"Report directory: {validator.report_dir}")
     
     validator.validate_files(validator.original_dir, validator.anonymized_dir)
 
 def run_template_cli():
-    """テンプレート適用のCLIエントリーポイント"""
-    parser = argparse.ArgumentParser(description='RT DICOMテンプレート合成ツール')
-    parser.add_argument('--template', required=True, help='テンプレートDICOMファイルのパス')
-    parser.add_argument('--input', help='情報抽出元のDICOMディレクトリまたはファイル', default=str(DEFAULT_INPUT_DIR))
-    parser.add_argument('--output', help='出力ディレクトリのパス', default=str(DEFAULT_ANONYMOUS_DIR))
-    parser.add_argument('--no-patient', action='store_true', help='患者情報を同期しない')
-    parser.add_argument('--no-geometry', action='store_true', help='幾何学情報を同期しない')
+    """Run the template synchronization CLI."""
+    parser = argparse.ArgumentParser(description='RT DICOM template synchronization tool')
+    parser.add_argument('--template', required=True, help='Template DICOM file path')
+    parser.add_argument('--input', help='Source DICOM directory or file', default=str(DEFAULT_INPUT_DIR))
+    parser.add_argument('--output', help='Output directory path', default=str(DEFAULT_ANONYMOUS_DIR))
+    parser.add_argument('--no-patient', action='store_true', help='Do not synchronize patient attributes')
+    parser.add_argument('--no-geometry', action='store_true', help='Do not synchronize geometry attributes')
     args = parser.parse_args(sys.argv[2:])
     
     from .template.engine import DICOMTemplateEngine
@@ -84,9 +84,9 @@ def run_template_cli():
     else:
         files = find_dicom_files(input_path)
         
-    print(f"テンプレート: {args.template}")
-    print(f"抽出元: {input_path} ({len(files)} ファイル)")
-    print(f"出力先: {output_dir}")
+    print(f"Template: {args.template}")
+    print(f"Source: {input_path} ({len(files)} files)")
+    print(f"Output: {output_dir}")
     
     for file_path in files:
         try:
@@ -97,17 +97,17 @@ def run_template_cli():
             )
             output_path = output_dir / f"tmpl_{file_path.name}"
             synced_dcm.save_as(str(output_path), write_like_original=False)
-            print(f"  成功: {file_path.name} -> {output_path.name}")
+            print(f"  Success: {file_path.name} -> {output_path.name}")
         except Exception as e:
-            print(f"  エラー ({file_path.name}): {e}")
+            print(f"  Error ({file_path.name}): {e}")
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == 'validate':
-            sys.argv.pop(1)  # 'validate' 引数を削除
+            sys.argv.pop(1)  # Remove the 'validate' argument.
             run_validator_cli()
         elif sys.argv[1] == 'template':
-            # run_template_cli() 内で parse_args(sys.argv[2:]) を行うためここではpopしない
+            # run_template_cli() parses sys.argv[2:], so do not pop here.
             run_template_cli()
         else:
             run_anonymizer_cli()

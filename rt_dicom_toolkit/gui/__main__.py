@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-GUIモジュールのエントリーポイント
+Entry point for the GUI package.
 """
 
 from .validator_gui import run_validator_gui
@@ -10,11 +10,11 @@ from .anonymizer_gui import run_anonymizer_gui
 import sys
 
 def main():
-    """GUIモジュールのメイン関数"""
-    print("RT DICOM Toolkit GUI モジュール")
-    print("使用方法:")
-    print("  validator - 検証ツールGUIを起動")
-    print("  anonymizer - 匿名化ツールGUIを起動")
+    """Launch the requested desktop interface."""
+    print("RT DICOM Toolkit GUI module")
+    print("Usage:")
+    print("  validator - launch the validator GUI")
+    print("  anonymizer - launch the anonymizer GUI")
     
     if len(sys.argv) > 1:
         if sys.argv[1] == "validator":
@@ -22,9 +22,9 @@ def main():
         elif sys.argv[1] == "anonymizer":
             run_anonymizer_gui()
         else:
-            print(f"不明なコマンド: {sys.argv[1]}")
+            print(f"Unknown command: {sys.argv[1]}")
     else:
-        # デフォルトでvalidator_guiを起動
+        # Launch the validator GUI by default.
         run_validator_gui()
 
 if __name__ == "__main__":

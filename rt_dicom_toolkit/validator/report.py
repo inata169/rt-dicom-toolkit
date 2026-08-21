@@ -1,5 +1,5 @@
 """
-検証レポートの生成モジュール
+Validation report generation.
 """
 
 from datetime import datetime
@@ -7,40 +7,40 @@ from pathlib import Path
 
 def generate_summary_report(summary, rules):
     """
-    検証結果のサマリーレポートを生成
+    Generate a text summary from validation results.
     
     Args:
-        summary: 検証結果のサマリー情報
-        rules: 検証ルールのインスタンス
+        summary: Aggregated validation results.
+        rules: Active ValidationRules instance.
         
     Returns:
-        生成されたレポートテキスト
+        Generated report text.
     """
     report = []
     
-    report.append("=== 匿名化検証サマリーレポート ===")
-    report.append(f"検証日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    report.append(f"総ファイル数: {summary['total_files']}")
-    report.append(f"マッチングファイル数: {summary['matched_files']}")
+    report.append("=== Anonymization Validation Summary ===")
+    report.append(f"Validation time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    report.append(f"Total files: {summary['total_files']}")
+    report.append(f"Matched files: {summary['matched_files']}")
     report.append("")
     
-    # 全体の匿名化状況
+    # Overall anonymization status.
     total_must_tags = len(rules.must_anonymize_tags) * summary['matched_files']
     total_anonymized = sum(summary['must_anonymize_stats'][tag]['anonymized'] for tag in rules.must_anonymize_tags)
     
     if total_must_tags > 0:
         anonymization_rate = total_anonymized / total_must_tags * 100
-        report.append(f"必須タグ匿名化率: {anonymization_rate:.1f}%")
+        report.append(f"Required-attribute anonymization rate: {anonymization_rate:.1f}%")
         
         if anonymization_rate >= 95:
-            report.append("✅ 匿名化状況: 良好（95%以上のタグが正しく匿名化されています）")
+            report.append("✅ Anonymization status: good (at least 95% processed correctly)")
         elif anonymization_rate >= 80:
-            report.append("⚠️ 匿名化状況: 要確認（80-95%のタグが匿名化されています）")
+            report.append("⚠️ Anonymization status: review required (80% to less than 95%)")
         else:
-            report.append("❌ 匿名化状況: 不十分（匿名化率が80%未満です）")
+            report.append("❌ Anonymization status: insufficient (less than 80%)")
     
     report.append("")
-    report.append("--- 必須匿名化タグの状況 ---")
+    report.append("--- Required anonymization attributes ---")
     for tag in rules.must_anonymize_tags:
         anonymized = summary['must_anonymize_stats'][tag]['anonymized']
         not_anonymized = summary['must_anonymize_stats'][tag]['not_anonymized']
@@ -52,7 +52,7 @@ def generate_summary_report(summary, rules):
             report.append(f"{status} {tag}: {anonymized}/{total} ({rate:.1f}%)")
     
     report.append("")
-    report.append("--- UIDタグの変更状況 ---")
+    report.append("--- UID changes ---")
     for tag in rules.uid_tags:
         changed = summary['uid_stats'][tag]['changed']
         not_changed = summary['uid_stats'][tag]['not_changed']
@@ -64,7 +64,7 @@ def generate_summary_report(summary, rules):
             report.append(f"{status} {tag}: {changed}/{total} ({rate:.1f}%)")
     
     report.append("")
-    report.append("--- 構造タグの保持状況 ---")
+    report.append("--- Structure preservation ---")
     for tag in rules.structure_tags:
         preserved = summary['structure_stats'][tag]['preserved']
         not_preserved = summary['structure_stats'][tag]['not_preserved']
@@ -76,7 +76,7 @@ def generate_summary_report(summary, rules):
             report.append(f"{status} {tag}: {preserved}/{total} ({rate:.1f}%)")
     
     report.append("")
-    report.append("--- プライベートタグの削除状況 ---")
+    report.append("--- Private-tag removal ---")
     removed = summary['private_tags_stats']['removed']
     not_removed = summary['private_tags_stats']['not_removed']
     total = removed + not_removed
@@ -84,58 +84,58 @@ def generate_summary_report(summary, rules):
     if total > 0:
         rate = removed / total * 100
         status = "✅" if rate >= 95 else "⚠️" if rate >= 80 else "❌"
-        report.append(f"{status} プライベートタグ削除: {removed}/{total} ({rate:.1f}%)")
+        report.append(f"{status} Private tags removed: {removed}/{total} ({rate:.1f}%)")
     
-    # モダリティ分布
+    # Modality distribution.
     report.append("")
-    report.append("--- モダリティ分布 ---")
+    report.append("--- Modality distribution ---")
     for modality, count in summary['modality_stats'].items():
-        report.append(f"{modality}: {count}ファイル")
+        report.append(f"{modality}: {count} files")
     
-    # 患者ID対応表
+    # Patient-ID mapping.
     if summary['patient_id_map']:
         report.append("")
-        report.append("--- 患者ID対応表 （最大10件表示） ---")
+        report.append("--- Patient ID mapping (up to 10 entries) ---")
         count = 0
         for orig_id, anon_id in summary['patient_id_map'].items():
-            # 患者IDの一部をマスク
+            # Mask part of the original patient ID.
             if len(orig_id) > 4:
                 masked_id = orig_id[:2] + "***" + orig_id[-2:]
             else:
                 masked_id = "***"
                 
-            report.append(f"{masked_id} → {anon_id}")
+            report.append(f"{masked_id} -> {anon_id}")
             count += 1
             if count >= 10:
-                report.append(f"...他 {len(summary['patient_id_map']) - 10} 件")
+                report.append(f"...and {len(summary['patient_id_map']) - 10} more")
                 break
     
     return "\n".join(report)
 
 def generate_validation_report_filename(prefix="validation_summary"):
     """
-    レポートのファイル名を生成
+    Generate a timestamped validation-report file name.
     
     Args:
-        prefix: ファイル名の接頭辞
+        prefix: File-name prefix.
         
     Returns:
-        タイムスタンプを含むファイル名
+        Timestamped file name.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"{prefix}_{timestamp}.txt"
 
 def save_report(report_text, report_dir, filename=None):
     """
-    レポートをファイルに保存
+    Save a validation report.
     
     Args:
-        report_text: レポートのテキスト
-        report_dir: 保存先ディレクトリ
-        filename: ファイル名（省略時は自動生成）
+        report_text: Report contents.
+        report_dir: Destination directory.
+        filename: Optional file name.
         
     Returns:
-        保存したファイルのパス
+        Path to the saved report.
     """
     if filename is None:
         filename = generate_validation_report_filename()

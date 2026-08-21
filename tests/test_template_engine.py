@@ -8,8 +8,8 @@ from rt_dicom_toolkit.template import DICOMTemplateEngine
 
 @pytest.fixture
 def mock_dicom_files(tmp_path):
-    """テスト用のモックDICOMファイルを生成する"""
-    # テンプレートファイル
+    """Create synthetic DICOM files for template tests."""
+    # Template file.
     template_path = tmp_path / "template.dcm"
     template_dcm = FileDataset(str(template_path), {}, file_meta=FileMetaDataset())
     template_dcm.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
@@ -26,7 +26,7 @@ def mock_dicom_files(tmp_path):
     template_dcm.SOPInstanceUID = template_dcm.file_meta.MediaStorageSOPInstanceUID
     template_dcm.save_as(str(template_path), write_like_original=False)
     
-    # ソースファイル
+    # Source file.
     source_path = tmp_path / "source.dcm"
     source_dcm = FileDataset(str(source_path), {}, file_meta=FileMetaDataset())
     source_dcm.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
@@ -36,8 +36,8 @@ def mock_dicom_files(tmp_path):
     source_dcm.is_implicit_VR = False
     
     source_dcm.Modality = "RTDOSE"
-    source_dcm.PatientName = "REAL^PATIENT"
-    source_dcm.PatientID = "REAL123"
+    source_dcm.PatientName = "SOURCE^NONPATIENT"
+    source_dcm.PatientID = "SOURCE123"
     source_dcm.ImagePositionPatient = [-100.5, -50.0, 25.5]
     source_dcm.PixelSpacing = [2.5, 2.5]
     source_dcm.SOPInstanceUID = source_dcm.file_meta.MediaStorageSOPInstanceUID
@@ -56,18 +56,18 @@ def test_sync_from_source(mock_dicom_files):
     template_path, source_path = mock_dicom_files
     engine = DICOMTemplateEngine(template_path)
     
-    # 同期実行
+    # Synchronize all configured groups.
     synced_dcm = engine.sync_from_source(source_path)
     
-    # 患者情報がソースから同期されているか
-    assert synced_dcm.PatientName == "REAL^PATIENT"
-    assert synced_dcm.PatientID == "REAL123"
+    # Patient attributes come from the source.
+    assert synced_dcm.PatientName == "SOURCE^NONPATIENT"
+    assert synced_dcm.PatientID == "SOURCE123"
     
-    # 幾何学情報がソースから同期されているか
+    # Geometry comes from the source.
     assert synced_dcm.ImagePositionPatient == [-100.5, -50.0, 25.5]
     assert synced_dcm.PixelSpacing == [2.5, 2.5]
     
-    # 新しいUIDが生成されているか
+    # New UIDs are generated.
     assert synced_dcm.SOPInstanceUID != engine._template_dcm.SOPInstanceUID
     assert synced_dcm.file_meta.MediaStorageSOPInstanceUID == synced_dcm.SOPInstanceUID
     
@@ -75,11 +75,11 @@ def test_sync_partial(mock_dicom_files):
     template_path, source_path = mock_dicom_files
     engine = DICOMTemplateEngine(template_path)
     
-    # 幾何学情報のみ同期
+    # Synchronize geometry only.
     synced_dcm = engine.sync_from_source(source_path, sync_patient=False)
     
-    # 患者情報はテンプレートのまま
+    # Patient attributes remain from the template.
     assert synced_dcm.PatientID == "TMPL001"
     
-    # 幾何学情報はソースのもの
+    # Geometry comes from the source.
     assert synced_dcm.PixelSpacing == [2.5, 2.5]

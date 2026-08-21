@@ -4,10 +4,10 @@
 """
 DICOM Anonymization Checker
 
-匿名化処理後のDICOMファイルが「本当に匿名化できているか」を検証するスタンドアロンツール。
-2つのモードをサポート：
-1. 単独スキャン (--scan): 匿名化済みディレクトリ内の個人情報残存をチェック
-2. ペア比較 (--compare): 原本と匿名化済みファイルの差分を確認
+Standalone checker for DICOM anonymization results.
+It supports two modes:
+1. Standalone scan (--scan): inspect one anonymized directory for identifying data.
+2. Paired comparison (--compare): compare original and anonymized files.
 """
 
 import os
@@ -20,11 +20,11 @@ from datetime import datetime
 try:
     import pydicom
 except ImportError:
-    print("エラー: pydicom モジュールがインストールされていません。")
-    print("インストール方法: pip install pydicom")
+    print("Error: pydicom is not installed.")
+    print("Install it with: pip install pydicom")
     exit(1)
 
-# 出力先ディレクトリ
+# Report output directory.
 LOG_DIR = Path("DICOM_LOGS")
 
 class TerminalColors:
@@ -39,9 +39,9 @@ class TerminalColors:
     UNDERLINE = '\033[4m'
 
 class ValidationRules:
-    """匿名化検証ルールを定義するクラス"""
+    """Rules used by the standalone anonymization checker."""
     def __init__(self):
-        # 必ず匿名化されるべきタグのリスト
+        # Attributes that must be anonymized.
         self.must_anonymize_tags = [
             "PatientName", "PatientID", "PatientBirthDate", "PatientAddress",
             "PatientTelephoneNumbers", "ReferringPhysicianName", "PhysiciansOfRecord",
@@ -49,17 +49,17 @@ class ValidationRules:
             "StationName", "OperatorsName"
         ]
         
-        # UIDタグのリスト
+        # UID attributes.
         self.uid_tags = [
             "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "FrameOfReferenceUID"
         ]
         
-        # 日付関連のタグ
+        # Date attributes.
         self.date_tags = [
             "StudyDate", "SeriesDate", "AcquisitionDate", "ContentDate"
         ]
         
-        # RT特有のタグ
+        # RT-specific attributes.
         self.rt_specific_tags = [
             "StructureSetLabel", "StructureSetName", "ROIName", "PlanLabel"
         ]
@@ -70,7 +70,7 @@ class AnonymizationChecker:
         LOG_DIR.mkdir(exist_ok=True, parents=True)
     
     def _find_dicom_files(self, directory, exclude_dirs=None):
-        """DICOMファイルを検索（指定ディレクトリを除外）"""
+        """Find DICOM files while excluding selected directories."""
         if exclude_dirs is None:
             exclude_dirs = []
         
@@ -80,7 +80,7 @@ class AnonymizationChecker:
         for root, _, files in os.walk(directory):
             root_path = Path(root).absolute()
             
-            # 除外ディレクトリの下にあるかチェック
+            # Skip paths under excluded directories.
             is_excluded = False
             for excl in exclude_paths:
                 if str(root_path).startswith(str(excl)):
@@ -95,14 +95,15 @@ class AnonymizationChecker:
                 if file_path.suffix.lower() in ['.lnk', '.ini', '.txt', '.log', '.json', '.md']:
                     continue
                     
-                # 簡易的なDICOMチェック
+                # Perform a lightweight DICOM check.
                 try:
                     with open(file_path, 'rb') as f:
                         f.seek(128)
                         if f.read(4) == b"DICM":
                             dicom_files.append(file_path)
                         else:
-                            # 拡張子なしでもDICOMかもしれないため、ヘッダがない場合はpydicomで少し読んでみる
+                            # Extensionless DICOM may lack a preamble, so let
+                            # pydicom inspect the file.
                             try:
                                 pydicom.dcmread(str(file_path), force=True, stop_before_pixels=True)
                                 dicom_files.append(file_path)
@@ -116,7 +117,7 @@ class AnonymizationChecker:
         print(f"{color}{text}{TerminalColors.ENDC}")
 
     def _check_tag_empty_or_anonymous(self, value):
-        """値が空、もしくはANONYMOUSなどのダミー値になっているか"""
+        """Return whether a value is empty or a known anonymized placeholder."""
         val_str = str(value).strip().upper()
         if not val_str:
             return True
@@ -124,21 +125,21 @@ class AnonymizationChecker:
             return True
         if val_str == "19000101" or val_str == "20000101":
             return True
-        # 000Y (年齢) や O (性別)
+        # Placeholders such as 000Y for age and O for sex.
         if val_str in ["000Y", "O"]:
             return True
         return False
 
     def scan_directory(self, target_dir):
-        """モードA: 単独スキャン"""
+        """Run standalone scan mode."""
         target_dir = Path(target_dir)
         if not target_dir.exists():
-            self.print_colored(f"エラー: ディレクトリが存在しません -> {target_dir}", TerminalColors.FAIL)
+            self.print_colored(f"Error: directory does not exist -> {target_dir}", TerminalColors.FAIL)
             return None
 
-        self.print_colored(f"スキャン開始: {target_dir}", TerminalColors.OKCYAN)
+        self.print_colored(f"Starting scan: {target_dir}", TerminalColors.OKCYAN)
         files = self._find_dicom_files(target_dir)
-        self.print_colored(f"対象ファイル数: {len(files)}", TerminalColors.OKCYAN)
+        self.print_colored(f"Files to scan: {len(files)}", TerminalColors.OKCYAN)
         
         results = {
             "mode": "scan",
@@ -159,39 +160,40 @@ class AnonymizationChecker:
                 dcm = pydicom.dcmread(str(file_path), force=True, stop_before_pixels=True)
                 file_issues = []
                 
-                # プライベートタグのチェック
+                # Check private tags.
                 private_tags = [tag for tag in dcm.keys() if tag.is_private]
                 if private_tags:
                     results["stats"]["private_tags_found"] += len(private_tags)
-                    file_issues.append(f"プライベートタグが {len(private_tags)} 個残存")
+                    file_issues.append(f"{len(private_tags)} private tags remain")
                 
-                # 必須タグのチェック
+                # Check required attributes.
                 for tag in self.rules.must_anonymize_tags:
                     if hasattr(dcm, tag):
                         val = getattr(dcm, tag)
                         if not self._check_tag_empty_or_anonymous(val):
                             results["stats"]["suspicious_must_tags"] += 1
-                            # PatientIDについてはハッシュ化されているかもしれないので、完全なエラーとしないが警告
+                            # Patient ID may be hashed, so report a warning rather
+                            # than treating every unknown value as a hard error.
                             if tag == "PatientID":
                                 if not str(val).isdigit() or len(str(val)) < 5:
-                                    file_issues.append(f"不完全な PatientID の疑い: {val}")
+                                    file_issues.append(f"Possibly incomplete Patient ID: {val}")
                             else:
-                                file_issues.append(f"個人情報残存の疑い ({tag}): {val}")
+                                file_issues.append(f"Possible identifying data remains ({tag}): {val}")
                 
-                # 日付タグのチェック
+                # Check date attributes.
                 for tag in self.rules.date_tags:
                     if hasattr(dcm, tag):
                         val = getattr(dcm, tag)
                         if str(val) != "20000101" and str(val) != "":
-                            file_issues.append(f"実日付残存の疑い ({tag}): {val}")
+                            file_issues.append(f"Possible real date remains ({tag}): {val}")
 
-                # UIDのチェック (1.2.826.0.1.3680043.2.1125等、特定の既知ルートで始まっていればOKとする)
-                # ここではpydicomの生成する root = 1.2.826.0.1.3680043.8.498 か確認
+                # Accept configured known generated UID roots. This check uses
+                # the root generated by pydicom.
                 for tag in self.rules.uid_tags:
                     if hasattr(dcm, tag):
                         val = str(getattr(dcm, tag))
                         if not val.startswith("1.2.826.0.1.3680043.8.498") and not val.startswith("2.25."):
-                             file_issues.append(f"元UID残存の疑い ({tag}): {val}")
+                             file_issues.append(f"Possible original UID remains ({tag}): {val}")
 
                 detail = {"file": str(file_path.name), "issues": file_issues}
                 results["file_details"].append(detail)
@@ -202,9 +204,9 @@ class AnonymizationChecker:
                         results["warnings"].append(f"{file_path.name}: {issue}")
 
             except Exception as e:
-                results["errors"].append(f"{file_path.name} の読み込みエラー: {str(e)}")
+                results["errors"].append(f"Read error for {file_path.name}: {str(e)}")
         
-        # Setをリストに戻す
+        # Convert sets to lists for serialization.
         results["stats"]["files_with_issues"] = list(results["stats"]["files_with_issues"])
         return results
 
@@ -215,7 +217,7 @@ class AnonymizationChecker:
         if hasattr(dcm, 'InstanceNumber'): key_parts.append(f"INS:{dcm.InstanceNumber}")
         if hasattr(dcm, 'SOPClassUID'): key_parts.append(f"SOP:{dcm.SOPClassUID}")
         
-        # 固有の識別として ImagePositionPatient などがあれば使う
+        # Use Image Position Patient and similar values when available.
         if hasattr(dcm, 'ImagePositionPatient'):
             pos = [str(int(float(p))) for p in dcm.ImagePositionPatient]
             key_parts.append(f"POS:{','.join(pos)}")
@@ -225,23 +227,23 @@ class AnonymizationChecker:
         return None
 
     def compare_directories(self, original_dir, anonymized_dir):
-        """モードB: ペア比較"""
+        """Run paired-comparison mode."""
         orig_dir = Path(original_dir)
         anon_dir = Path(anonymized_dir)
         
         if not orig_dir.exists() or not anon_dir.exists():
-            self.print_colored("エラー: 指定されたディレクトリが存在しません。", TerminalColors.FAIL)
+            self.print_colored("Error: one or both specified directories do not exist.", TerminalColors.FAIL)
             return None
             
-        self.print_colored(f"ペア比較開始:", TerminalColors.OKCYAN)
-        self.print_colored(f"  原本: {orig_dir}", TerminalColors.OKCYAN)
-        self.print_colored(f"  匿名化: {anon_dir}", TerminalColors.OKCYAN)
+        self.print_colored("Starting paired comparison:", TerminalColors.OKCYAN)
+        self.print_colored(f"  Original: {orig_dir}", TerminalColors.OKCYAN)
+        self.print_colored(f"  Anonymized: {anon_dir}", TerminalColors.OKCYAN)
         
         orig_files = self._find_dicom_files(orig_dir, exclude_dirs=[anon_dir])
         anon_files = self._find_dicom_files(anon_dir)
         
-        self.print_colored(f"原本ファイル数: {len(orig_files)}", TerminalColors.OKCYAN)
-        self.print_colored(f"匿名化ファイル数: {len(anon_files)}", TerminalColors.OKCYAN)
+        self.print_colored(f"Original files: {len(orig_files)}", TerminalColors.OKCYAN)
+        self.print_colored(f"Anonymized files: {len(anon_files)}", TerminalColors.OKCYAN)
         
         results = {
             "mode": "compare",
@@ -263,7 +265,7 @@ class AnonymizationChecker:
             "file_details": []
         }
         
-        # マッチング辞書の作成
+        # Build matching indexes.
         orig_map = {}
         for f in orig_files:
             try:
@@ -280,7 +282,7 @@ class AnonymizationChecker:
                 key = self._generate_matching_key(anon_dcm)
                 orig_f = None
                 
-                # 同名ファイルで直接マッチを優先
+                # Prefer a direct file-name match.
                 expected_orig = orig_dir / anon_f.name
                 if expected_orig in orig_files:
                     orig_f = expected_orig
@@ -288,7 +290,7 @@ class AnonymizationChecker:
                     orig_f = orig_map[key]
                 
                 if not orig_f:
-                    results["warnings"].append(f"マッチする原本が見つかりません: {anon_f.name}")
+                    results["warnings"].append(f"No matching original file: {anon_f.name}")
                     continue
                     
                 results["matched_files"] += 1
@@ -296,7 +298,7 @@ class AnonymizationChecker:
                 
                 detail = {"file": anon_f.name, "diffs": []}
                 
-                # 必須タグの比較
+                # Compare required attributes.
                 for tag in self.rules.must_anonymize_tags:
                     orig_val = getattr(orig_dcm, tag, "N/A") if hasattr(orig_dcm, tag) else "N/A"
                     anon_val = getattr(anon_dcm, tag, "N/A") if hasattr(anon_dcm, tag) else "N/A"
@@ -306,9 +308,9 @@ class AnonymizationChecker:
                     else:
                         if orig_val != "N/A" and str(orig_val).strip() != "":
                             results["stats"]["must_tags_unchanged"] += 1
-                            detail["diffs"].append(f"必須タグ未変更 ({tag}): {orig_val}")
+                            detail["diffs"].append(f"Required attribute unchanged ({tag}): {orig_val}")
                             
-                # UIDの比較
+                # Compare UIDs.
                 for tag in self.rules.uid_tags:
                     orig_val = getattr(orig_dcm, tag, "N/A") if hasattr(orig_dcm, tag) else "N/A"
                     anon_val = getattr(anon_dcm, tag, "N/A") if hasattr(anon_dcm, tag) else "N/A"
@@ -317,9 +319,9 @@ class AnonymizationChecker:
                     else:
                         if orig_val != "N/A":
                             results["stats"]["uids_unchanged"] += 1
-                            detail["diffs"].append(f"UID未変更 ({tag}): {orig_val}")
+                            detail["diffs"].append(f"UID unchanged ({tag}): {orig_val}")
                             
-                # プライベートタグ
+                # Check private tags.
                 orig_priv = [t for t in orig_dcm.keys() if t.is_private]
                 anon_priv = [t for t in anon_dcm.keys() if t.is_private]
                 
@@ -327,13 +329,13 @@ class AnonymizationChecker:
                     results["stats"]["private_tags_removed"] += 1
                 elif len(anon_priv) > 0:
                     results["stats"]["private_tags_remaining"] += 1
-                    detail["diffs"].append(f"プライベートタグ残存: {len(anon_priv)}個")
+                    detail["diffs"].append(f"Private tags remain: {len(anon_priv)}")
                 
                 if detail["diffs"]:
                     results["file_details"].append(detail)
                     
             except Exception as e:
-                results["errors"].append(f"{anon_f.name} の処理エラー: {str(e)}")
+                results["errors"].append(f"Processing error for {anon_f.name}: {str(e)}")
                 
         return results
 
@@ -346,46 +348,46 @@ class AnonymizationChecker:
         
         # 1. Console Output
         self.print_colored("\n" + "="*40, TerminalColors.HEADER)
-        self.print_colored(" 匿名化チェッカー レポート", TerminalColors.BOLD)
+        self.print_colored(" Anonymization Checker Report", TerminalColors.BOLD)
         self.print_colored("="*40, TerminalColors.HEADER)
         
         if results["mode"] == "scan":
-            self.print_colored(f"モード: 単独スキャン", TerminalColors.OKCYAN)
-            self.print_colored(f"スキャン対象: {results['target_dir']}", TerminalColors.OKCYAN)
-            self.print_colored(f"ファイル数: {results['scanned_files']}", TerminalColors.OKCYAN)
+            self.print_colored("Mode: standalone scan", TerminalColors.OKCYAN)
+            self.print_colored(f"Scan target: {results['target_dir']}", TerminalColors.OKCYAN)
+            self.print_colored(f"Files: {results['scanned_files']}", TerminalColors.OKCYAN)
             
             stats = results["stats"]
             issues_count = len(stats["files_with_issues"])
             
             if issues_count == 0 and not results["errors"]:
-                self.print_colored("\n✅ すべてのファイルで個人情報は見つかりませんでした！", TerminalColors.OKGREEN)
+                self.print_colored("\n✅ No configured identifying data was detected in the scanned files.", TerminalColors.OKGREEN)
             else:
-                self.print_colored(f"\n⚠️ 問題が疑われるファイル数: {issues_count}", TerminalColors.WARNING)
-                self.print_colored(f"  - 残存プライベートタグの総数: {stats['private_tags_found']}", TerminalColors.WARNING)
-                self.print_colored(f"  - 疑わしい必須タグの総数: {stats['suspicious_must_tags']}", TerminalColors.WARNING)
+                self.print_colored(f"\n⚠️ Files with possible issues: {issues_count}", TerminalColors.WARNING)
+                self.print_colored(f"  - Remaining private tags: {stats['private_tags_found']}", TerminalColors.WARNING)
+                self.print_colored(f"  - Suspicious required attributes: {stats['suspicious_must_tags']}", TerminalColors.WARNING)
                 
         else:
-            self.print_colored(f"モード: ペア比較", TerminalColors.OKCYAN)
-            self.print_colored(f"原本: {results['original_dir']}", TerminalColors.OKCYAN)
-            self.print_colored(f"匿名化: {results['anonymized_dir']}", TerminalColors.OKCYAN)
-            self.print_colored(f"マッチファイル数: {results['matched_files']}/{results['anonymized_files_count']}", TerminalColors.OKCYAN)
+            self.print_colored("Mode: paired comparison", TerminalColors.OKCYAN)
+            self.print_colored(f"Original: {results['original_dir']}", TerminalColors.OKCYAN)
+            self.print_colored(f"Anonymized: {results['anonymized_dir']}", TerminalColors.OKCYAN)
+            self.print_colored(f"Matched files: {results['matched_files']}/{results['anonymized_files_count']}", TerminalColors.OKCYAN)
             
             stats = results["stats"]
-            self.print_colored("\n[変更統計]", TerminalColors.BOLD)
-            self.print_colored(f"  必須タグ変更: {stats['must_tags_changed']} / 未変更: {stats['must_tags_unchanged']}", TerminalColors.OKBLUE)
-            self.print_colored(f"  UIDタグ変更: {stats['uids_changed']} / 未変更: {stats['uids_unchanged']}", TerminalColors.OKBLUE)
+            self.print_colored("\n[Change statistics]", TerminalColors.BOLD)
+            self.print_colored(f"  Required attributes changed: {stats['must_tags_changed']} / unchanged: {stats['must_tags_unchanged']}", TerminalColors.OKBLUE)
+            self.print_colored(f"  UIDs changed: {stats['uids_changed']} / unchanged: {stats['uids_unchanged']}", TerminalColors.OKBLUE)
             
             if stats["must_tags_unchanged"] == 0 and stats["uids_unchanged"] == 0 and stats["private_tags_remaining"] == 0:
-                self.print_colored("\n✅ 比較検証に合格しました！", TerminalColors.OKGREEN)
+                self.print_colored("\n✅ Paired validation passed.", TerminalColors.OKGREEN)
             else:
-                self.print_colored("\n⚠️ 匿名化が不十分な箇所があります。", TerminalColors.WARNING)
+                self.print_colored("\n⚠️ Some configured values may be insufficiently anonymized.", TerminalColors.WARNING)
 
         if results["errors"]:
-            self.print_colored("\n❌ エラーが発生しました:", TerminalColors.FAIL)
+            self.print_colored("\n❌ Errors occurred:", TerminalColors.FAIL)
             for err in results["errors"][:5]:
                 self.print_colored(f"  {err}", TerminalColors.FAIL)
             if len(results["errors"]) > 5:
-                self.print_colored(f"  ...他 {len(results['errors']) - 5} 件", TerminalColors.FAIL)
+                self.print_colored(f"  ...and {len(results['errors']) - 5} more", TerminalColors.FAIL)
 
         # 2. Markdown Report
         md_path = LOG_DIR / f"{prefix}.md"
@@ -453,15 +455,15 @@ class AnonymizationChecker:
             # Set is already converted to list
             json.dump(results, f, ensure_ascii=False, indent=2)
 
-        self.print_colored(f"\nレポートを出力しました:", TerminalColors.OKGREEN)
+        self.print_colored("\nReports written:", TerminalColors.OKGREEN)
         self.print_colored(f"  - Markdown: {md_path}", TerminalColors.OKGREEN)
         self.print_colored(f"  - Text: {txt_path}", TerminalColors.OKGREEN)
         self.print_colored(f"  - JSON: {json_path}", TerminalColors.OKGREEN)
 
 def main():
     parser = argparse.ArgumentParser(description="DICOM Anonymization Checker")
-    parser.add_argument("--scan", type=str, metavar="DIR", help="匿名化済みディレクトリ内の個人情報残存をスキャンします")
-    parser.add_argument("--compare", nargs=2, metavar=("ORIG_DIR", "ANON_DIR"), help="原本と匿名化済みファイルの差分を比較します")
+    parser.add_argument("--scan", type=str, metavar="DIR", help="Scan an anonymized directory for configured identifying data")
+    parser.add_argument("--compare", nargs=2, metavar=("ORIG_DIR", "ANON_DIR"), help="Compare original and anonymized files")
     
     args = parser.parse_args()
     checker = AnonymizationChecker()

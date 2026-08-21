@@ -1,30 +1,42 @@
-# OpenSpec: モダンなGUIの導入 (CustomTkinter)
+# OpenSpec: Introduce a Modern CustomTkinter GUI
 
 - Status: ✅ APPROVED
 - Author: Antigravity
 - Date: 2026-04-28
 
-## 1. 背景 / 目的
-現在の `rt_dicom_toolkit` はCLI（コマンドライン）ベースで動作していますが、非エンジニアのユーザー（医療従事者など）にとっては操作のハードルが高い場合があります。
-そこで、直感的でモダンなGUI（グラフィカル・ユーザー・インターフェース）を導入し、入力/出力ディレクトリの選択、設定の変更、処理の進行状況の確認を画面上から簡単に行えるようにします。
-フレームワークには、Pythonで軽量かつモダン（ダークモード標準対応）なUIを構築できる `customtkinter` の使用を提案します。
+## 1. Background and objective
 
-## 2. 変更内容
-1. **依存関係の追加**: `customtkinter` パッケージをプロジェクトに追加します。
-2. **GUIモジュールの作成**: `rt_dicom_toolkit/gui/` ディレクトリを新設し、以下のコンポーネントを実装します。
-   - `main_window.py`: メイン画面（パス選択、設定トグル、実行ボタン、プログレスバー、ログ表示エリア）
-   - `app.py`: アプリケーションの起動とスレッド管理
-3. **エントリーポイントの改修**:
-   - 引数なしで `python -m rt_dicom_toolkit` を実行した場合はGUIを起動し、引数がある場合は従来通りのCLIとして動作するように `cli.py` または `__main__.py` を改修します。
-4. **コアロジックの連携**:
-   - 既存の `RTDicomAnonymizer` クラスの処理状況（進捗率やログ）をGUIに伝達するためのコールバック機構（またはシグナル機構）を追加します。
+`rt_dicom_toolkit` originally operated through a command-line interface. That
+can be a barrier for non-engineering users, including healthcare professionals.
+Introduce an intuitive modern GUI so users can select input and output
+directories, change settings, and monitor progress on screen. Use
+`customtkinter` to provide a lightweight Python interface with built-in dark
+mode support.
 
-## 3. 影響範囲 / リスク
-- **依存関係の増加**: GUIライブラリが追加されるため、インストール時のサイズが若干増加します（PyInstaller等でビルドする際にも影響します）。
-- **UIフリーズの回避**: 匿名化処理（重いI/O処理）をメインのGUIスレッドで実行すると画面が固まるため、`threading` モジュールを用いて別スレッドで処理を行う必要があります。
-- **コア機能との疎結合**: 既存のコアロジック（`core.py`）をGUIに依存させないようにし、CLIとGUIの両方から安全に呼び出せる設計を維持します。
+## 2. Changes
 
-## 4. テスト・検証計画
-1. **GUI操作テスト**: 画面上からフォルダを選択し、処理をスタートして正常に完了するかを確認。
-2. **非同期テスト**: 大量のファイルを処理している最中でも、プログレスバーが更新され、ウィンドウがフリーズしない（ドラッグで移動できる等）ことを確認。
-3. **後方互換性テスト**: すでに作成した `pytest` スイートを実行し、CLIやコアロジックの動作が破壊されていないことを確認。
+1. Add `customtkinter` as a project dependency.
+2. Create `rt_dicom_toolkit/gui/` with these components:
+   - `main_window.py`: path selection, setting toggles, start button, progress
+     bar, and log display;
+   - `app.py`: application startup and thread management.
+3. Update the entry point so `python -m rt_dicom_toolkit` without arguments
+   launches the GUI, while arguments continue to select CLI behavior.
+4. Add a callback or signal mechanism so `RTDicomAnonymizer` can report progress
+   and log messages to the GUI.
+
+## 3. Impact and risks
+
+- The GUI dependency increases installation and packaged-build size.
+- Anonymization performs substantial I/O and must run outside the main GUI
+  thread to keep the window responsive.
+- Keep the core independent from the GUI so both CLI and GUI callers can use it
+  safely.
+
+## 4. Validation plan
+
+1. Select folders in the GUI, start processing, and confirm normal completion.
+2. Process many files and confirm the progress bar updates while the window
+   remains responsive and movable.
+3. Run the existing pytest suite to confirm that CLI and core behavior remain
+   backward compatible.

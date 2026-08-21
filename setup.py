@@ -1,5 +1,5 @@
 """
-RT DICOM Toolkit インストーラ設定
+Package configuration for RT DICOM Toolkit.
 """
 
 from setuptools import setup, find_packages
@@ -27,7 +27,7 @@ setup(
     },
     author="Medical Physics Team",
     author_email="example@example.com",
-    description="放射線治療用DICOM匿名化・検証ツールキット",
+    description="Radiotherapy DICOM anonymization and validation toolkit",
     keywords="dicom, anonymization, radiation therapy, medical physics",
     python_requires=">=3.10",
 )

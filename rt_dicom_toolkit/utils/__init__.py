@@ -1,5 +1,5 @@
 """
-RT DICOM Toolkit のユーティリティ関数
+Utilities for RT DICOM Toolkit.
 """
 
 from .dicom_utils import *

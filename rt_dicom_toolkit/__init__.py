@@ -1,5 +1,5 @@
 """
-RT DICOM Toolkit - 放射線治療用DICOM匿名化・検証ツールキット
+RT DICOM Toolkit - radiotherapy DICOM anonymization and validation.
 """
 
 __version__ = '1.0.0'

@@ -1,27 +1,40 @@
-# Proposal: 匿名化チェッカーの実装 (CLI & GUI)
+# Proposal: Implement an Anonymization Checker (CLI and GUI)
 
 - Status: ✅ APPROVED
 - Author: Antigravity
 - Date: 2026-04-30
 
-## 1. 背景 / 目的
-匿名化処理後のDICOMファイルが「本当に匿名化できているか」を検証する手段を強化するため。
-既存の `validator` は原本とのペア比較かつGUI依存であったため、以下のニーズに応える：
-1. 匿名化済みディレクトリ単体での「個人情報残存スキャン」機能の提供
-2. CLIからの高速な検証と、複数形式（MD, JSON, TXT）のレポート出力
-3. 軽量かつスタンドアロンなツール構成
+## 1. Background and objective
 
-## 2. 変更内容
-- **check_anonymization.py**: CLIベースのチェッカー。単独スキャンとペア比較の2モードを実装。
-- **check_anonymization_gui.py**: CustomTkinterを用いたモダンなGUIラッパー。
-- **start_checker_gui.bat**: GUI起動用バッチファイル。
-- **DICOM_LOGS/**: レポート保存用ディレクトリの自動生成。
+Strengthen the ability to verify whether DICOM output is actually anonymized.
+The existing validator required a paired comparison with the original data and
+depended on a GUI. Address these needs:
 
-## 3. 影響範囲 / リスク
-- 既存の `rt_dicom_toolkit` モジュールには一切変更を加えず、ルートにスタンドアロンツールとして配置するため、既存機能への影響はない。
-- `pydicom` および `customtkinter` に依存。
+1. scan one anonymized directory for remaining personal information;
+2. provide fast CLI validation with Markdown, JSON, and text reports; and
+3. keep the checker lightweight and standalone.
 
-## 4. テスト・検証計画
-- `DICOM\MonacoPhantom03x03\anonymized` に対するスキャンとペア比較を実行し、正常終了を確認。
-- 匿名化前の原本ディレクトリに対してスキャンを実行し、意図通り警告が出ることを確認。
-- `pytest` により既存の単体テスト・統合テストがすべてPASSすることを維持。
+## 2. Changes
+
+- `check_anonymization.py`: CLI checker with standalone scan and paired
+  comparison modes.
+- `check_anonymization_gui.py`: modern CustomTkinter wrapper.
+- `start_checker_gui.bat`: GUI launcher.
+- `DICOM_LOGS/`: automatically created report directory.
+
+## 3. Impact and risks
+
+- The tools are standalone files at the repository root and do not modify the
+  existing `rt_dicom_toolkit` package.
+- They depend on `pydicom` and `customtkinter`.
+
+## 4. Validation plan
+
+- Run scan and paired comparison against the then-approved test directory and
+  confirm normal completion.
+- Scan the original test directory and confirm expected warnings.
+- Keep all existing unit and integration tests passing under pytest.
+
+> Historical note: this validation record predates the repository's current
+> synthetic-data-only development rule. Future validation must not use or search
+> for the historical path named in the original proposal.
