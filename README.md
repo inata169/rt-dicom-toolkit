@@ -32,10 +32,15 @@ legal compliance, or clinical suitability.
 
 ### Launch the GUI
 
-Double-click `start_gui.bat` from the repository root, or run:
+After completing the [development installation](#development-installation),
+double-click `start_gui.bat` from the repository root. The launcher uses only
+`.venv\Scripts\python.exe` and prints setup instructions instead of falling back
+to an unconfigured system Python.
+
+You can also run the same environment directly:
 
 ```powershell
-python -m rt_dicom_toolkit
+.\.venv\Scripts\python.exe -m rt_dicom_toolkit
 ```
 
 ### Use the command line
@@ -75,15 +80,21 @@ rt-dicom-toolkit/
 - Python 3.10 or later
 - Windows 10/11 is the primary desktop target
 
-### Install dependencies
+### Development installation
 
-For a development installation, install the dependencies declared by the
-project:
+Virtual environments are intentionally not stored in Git. After a fresh clone
+on Windows, create one and install the project into it:
 
 ```powershell
-python -m pip install -r rt_dicom_toolkit/requirements.txt
-python -m pip install -e .
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+.\.venv\Scripts\python.exe -m pip install -r .\rt_dicom_toolkit\requirements.txt
+.\.venv\Scripts\python.exe -m pip install -e .
 ```
+
+Confirm that `python --version` selects a supported Python 3.10 or later before
+creating the environment. Recreate `.venv` when changing to a different Python
+installation.
 
 ### Offline installation on Windows
 
