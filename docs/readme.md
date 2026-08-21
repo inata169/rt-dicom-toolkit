@@ -14,7 +14,10 @@ Additional documentation:
   recorded Windows 10 validation of the offline workflow;
 - [`windows_offline_installation_validation_2026-08-21.md`](windows_offline_installation_validation_2026-08-21.md):
   recorded human-observed Windows 11 installation, launch, and anonymizer
-  validation for release `v0.0.0`.
+  validation for release `v0.0.0`;
+- [`windows_offline_installation_validation_v0.0.1_2026-08-21.md`](windows_offline_installation_validation_v0.0.1_2026-08-21.md):
+  recorded automated offline installation and human-observed all-GUI startup
+  and shutdown validation for release `v0.0.1` on Windows 11.
 
 Development and safety guidance:
 
