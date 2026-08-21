@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="rt_dicom_toolkit",
-    version="0.0.0",
+    version="0.0.1",
     packages=find_packages(),
     install_requires=[
         "pydicom>=2.4.4,<3.1",
